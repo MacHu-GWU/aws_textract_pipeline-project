@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+todo: add docstring
+"""
+
 import typing as T
 
 from .vendor.better_enum import BetterStrEnum
@@ -9,6 +13,7 @@ class DocTypeEnum(BetterStrEnum):
     """
     Document Type Enum.
     """
+
     pdf = "pdf"
     jpg = "jpg"
     png = "png"
