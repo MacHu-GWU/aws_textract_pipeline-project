@@ -7,6 +7,13 @@ from s3pathlib import S3Path
 
 @dataclasses.dataclass
 class Workspace:
+    """
+    Workspace class to hold the S3 directory URI and provide methods to get
+    S3 paths for different stages of the pipeline.
+
+    :param s3dir_uri: the root S3 directory URI. All the S3 paths are relative to this directory.
+    """
+
     s3dir_uri: str
 
     # fmt: off

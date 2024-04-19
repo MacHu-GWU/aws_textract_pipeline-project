@@ -1,9 +1,9 @@
 
-.. image:: https://readthedocs.org/projects/aws-textract-pipeline/badge/?version=latest
+.. .. image:: https://readthedocs.org/projects/aws-textract-pipeline/badge/?version=latest
     :target: https://aws-textract-pipeline.readthedocs.io/en/latest/
     :alt: Documentation Status
 
-.. image:: https://github.com/MacHu-GWU/aws_textract_pipeline-project/workflows/CI/badge.svg
+.. .. image:: https://github.com/MacHu-GWU/aws_textract_pipeline-project/workflows/CI/badge.svg
     :target: https://github.com/MacHu-GWU/aws_textract_pipeline-project/actions?query=workflow:CI
 
 .. image:: https://codecov.io/gh/MacHu-GWU/aws_textract_pipeline-project/branch/main/graph/badge.svg
@@ -26,10 +26,10 @@
 
 ------
 
-.. image:: https://img.shields.io/badge/Link-Document-blue.svg
+.. .. image:: https://img.shields.io/badge/Link-Document-blue.svg
     :target: https://aws-textract-pipeline.readthedocs.io/en/latest/
 
-.. image:: https://img.shields.io/badge/Link-API-blue.svg
+.. .. image:: https://img.shields.io/badge/Link-API-blue.svg
     :target: https://aws-textract-pipeline.readthedocs.io/en/latest/py-modindex.html
 
 .. image:: https://img.shields.io/badge/Link-Install-blue.svg
@@ -51,8 +51,6 @@
 Welcome to ``aws_textract_pipeline`` Documentation
 ==============================================================================
 该项目实现了我的博文 `Intelligent Document Processing Platform Solution Design <https://dev-exp-share.readthedocs.io/en/latest/search.html?q=Intelligent+Document+Processing+Platform+Solution+Design&check_keywords=yes&area=default>`_ 中 Data Store Pipeline 的部分. 这个项目中提供了很多关与这个 Pipeline 的核心组件, 例如 Status Tracking, S3 Bucket Structure, Textract API Call 等.
-
-Documentation for ``aws_textract_pipeline``.
 
 
 .. _install:

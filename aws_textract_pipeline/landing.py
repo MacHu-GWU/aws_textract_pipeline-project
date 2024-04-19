@@ -76,7 +76,8 @@ def get_tar_file_md5(
     s3path: "S3Path",
 ) -> str:
     """
-    Get md5 of all files in a tar fil on S3.
+    Get md5 of all files in a tar file on S3. This md5 is deterministic.
+    This md5 value is used as the content-based unique id of a document.
     """
     with s3path.open("rb", bsm=bsm) as fileobj:
         with tarfile.open(fileobj=fileobj, mode="r") as tar:

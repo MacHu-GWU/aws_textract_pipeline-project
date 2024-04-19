@@ -31,6 +31,9 @@ class Errors(DataClass):
 
 
 class StatusEnum(pm.patterns.status_tracker.BaseStatusEnum):
+    """
+    Textract pipeline status enum.
+    """
     # landing to raw
     s01000_landing_to_raw_pending = 1000
     s01020_landing_to_raw_in_progress = 1020
@@ -84,12 +87,18 @@ class StatusEnum(pm.patterns.status_tracker.BaseStatusEnum):
 class BaseStatusAndUpdateTimeIndex(
     pm.patterns.status_tracker.StatusAndUpdateTimeIndex,
 ):
+    """
+    Status Tracker GSI index, to allow lookup by status.
+    """
     pass
 
 
 class BaseTracker(
     pm.patterns.status_tracker.BaseStatusTracker,
 ):
+    """
+    Status tracker DynamoDB table ORM model.
+    """
     JOB_ID = "tt_pipe"
     STATUS_ZERO_PAD = 6
     MAX_RETRY = 3
@@ -113,6 +122,9 @@ class BaseTracker(
         self,
         debug: bool = False,
     ):
+        """
+        Transition from "landing" to "textract".
+        """
         return self.start(
             in_process_status=StatusEnum.s01000_landing_to_raw_pending.value,
             failed_status=StatusEnum.s01040_landing_to_raw_failed.value,
@@ -125,6 +137,9 @@ class BaseTracker(
         self,
         debug: bool = False,
     ):
+        """
+        Transition from "raw" to "component".
+        """
         return self.start(
             in_process_status=StatusEnum.s02020_raw_to_component_in_progress.value,
             failed_status=StatusEnum.s02040_raw_to_component_failed.value,
@@ -137,6 +152,9 @@ class BaseTracker(
         self,
         debug: bool = False,
     ):
+        """
+        Transition from "component" to "textract output".
+        """
         return self.start(
             in_process_status=StatusEnum.s03020_component_to_textract_output_in_progress.value,
             failed_status=StatusEnum.s03040_component_to_textract_output_failed.value,
@@ -149,6 +167,9 @@ class BaseTracker(
         self,
         debug: bool = False,
     ):
+        """
+        Transition from "textract output" to "text and json".
+        """
         return self.start(
             in_process_status=StatusEnum.s05020_textract_output_to_text_and_json_in_progress.value,
             failed_status=StatusEnum.s05040_textract_output_to_text_and_json_failed.value,
@@ -161,6 +182,9 @@ class BaseTracker(
         self,
         debug: bool = False,
     ):
+        """
+        Transition from "json" to "extracted data".
+        """
         return self.start(
             in_process_status=StatusEnum.s07020_json_to_extracted_data_in_progress.value,
             failed_status=StatusEnum.s07040_json_to_extracted_data_failed.value,
@@ -173,6 +197,9 @@ class BaseTracker(
         self,
         debug: bool = False,
     ):
+        """
+        Transition from "extracted data" to "hil output".
+        """
         return self.start(
             in_process_status=StatusEnum.s08020_extracted_data_to_hil_output_in_progress.value,
             failed_status=StatusEnum.s08040_extracted_data_to_hil_output_failed.value,
@@ -185,6 +212,9 @@ class BaseTracker(
         self,
         debug: bool = False,
     ):
+        """
+        Transition from "hil output" to "hil post process".
+        """
         return self.start(
             in_process_status=StatusEnum.s09020_hil_output_to_hil_post_process_in_progress.value,
             failed_status=StatusEnum.s09040_hil_output_to_hil_post_process_failed.value,
