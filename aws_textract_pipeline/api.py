@@ -8,6 +8,7 @@ Usage example::
 
 from .doc_type import DocTypeEnum
 from .doc_type import S3ContentTypeEnum
+from .workspace import Workspace
 from .landing import MetadataKeyEnum
 from .landing import LandingDocument
 from .landing import get_md5_of_bytes
