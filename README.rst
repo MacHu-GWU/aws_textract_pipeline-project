@@ -50,6 +50,8 @@
 
 Welcome to ``aws_textract_pipeline`` Documentation
 ==============================================================================
+该项目实现了我的博文 `Intelligent Document Processing Platform Solution Design <https://dev-exp-share.readthedocs.io/en/latest/search.html?q=Intelligent+Document+Processing+Platform+Solution+Design&check_keywords=yes&area=default>`_ 中 Data Store Pipeline 的部分. 这个项目中提供了很多关与这个 Pipeline 的核心组件, 例如 Status Tracking, S3 Bucket Structure, Textract API Call 等.
+
 Documentation for ``aws_textract_pipeline``.
 
 
