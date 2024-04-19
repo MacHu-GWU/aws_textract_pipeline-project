@@ -5,10 +5,13 @@ import pynamodb_mate as pm
 from s3pathlib import S3Path
 from boto_session_manager import BotoSesManager
 
+from aws_textract_pipeline.doc_type import DocTypeEnum
 from aws_textract_pipeline.tracker import (
     StatusEnum,
     BaseStatusAndUpdateTimeIndex,
     BaseTracker,
+    Data,
+    Component,
 )
 from aws_textract_pipeline.tests.mock_test import BaseTest
 
@@ -33,7 +36,27 @@ class TestTracker(BaseTest):
         Tracker.create_table(wait=True)
 
     def test(self):
-        tracker = Tracker.new(task_id="doc-1")
+        s3path_landing = S3Path(self.bucket, "root", "landing", "report.pdf")
+        tracker = Tracker.new(
+            task_id="doc-1",
+            data=Data(
+                landing_uri=s3path_landing.uri,
+                doc_type=DocTypeEnum.pdf.value,
+                components=[
+                    Component(id="000001"),
+                    Component(id="000002"),
+                    Component(id="000003"),
+                ],
+            ).to_dict(),
+        )
+
+        tracker = Tracker.get_one_or_none(task_id="doc-1")
+
+        # Test property method
+        assert tracker.doc_id == "doc-1"
+        assert tracker.data_obj.landing_uri == s3path_landing.uri
+
+        # Test status transition
         assert tracker.status == StatusEnum.s01000_landing_to_raw_pending.value
 
         with tracker.start_landing_to_textract(debug=False):

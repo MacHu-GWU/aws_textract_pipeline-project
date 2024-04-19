@@ -98,6 +98,10 @@ class BaseTracker(
     STATUS_ENUM = StatusEnum
 
     @property
+    def doc_id(self) -> str:
+        return self.task_id
+
+    @property
     def data_obj(self) -> Data:
         return Data.from_dict(self.data)
 
