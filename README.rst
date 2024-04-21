@@ -1,9 +1,9 @@
 
-.. .. image:: https://readthedocs.org/projects/aws-textract-pipeline/badge/?version=latest
+.. image:: https://readthedocs.org/projects/aws-textract-pipeline/badge/?version=latest
     :target: https://aws-textract-pipeline.readthedocs.io/en/latest/
     :alt: Documentation Status
 
-.. .. image:: https://github.com/MacHu-GWU/aws_textract_pipeline-project/workflows/CI/badge.svg
+.. image:: https://github.com/MacHu-GWU/aws_textract_pipeline-project/workflows/CI/badge.svg
     :target: https://github.com/MacHu-GWU/aws_textract_pipeline-project/actions?query=workflow:CI
 
 .. image:: https://codecov.io/gh/MacHu-GWU/aws_textract_pipeline-project/branch/main/graph/badge.svg
@@ -26,10 +26,10 @@
 
 ------
 
-.. .. image:: https://img.shields.io/badge/Link-Document-blue.svg
+.. image:: https://img.shields.io/badge/Link-Document-blue.svg
     :target: https://aws-textract-pipeline.readthedocs.io/en/latest/
 
-.. .. image:: https://img.shields.io/badge/Link-API-blue.svg
+.. image:: https://img.shields.io/badge/Link-API-blue.svg
     :target: https://aws-textract-pipeline.readthedocs.io/en/latest/py-modindex.html
 
 .. image:: https://img.shields.io/badge/Link-Install-blue.svg
@@ -50,6 +50,9 @@
 
 Welcome to ``aws_textract_pipeline`` Documentation
 ==============================================================================
+.. image:: https://aws-textract-pipeline.readthedocs.io/en/latest/_static/aws_textract_pipeline-logo.png
+    :target: https://aws-textract-pipeline.readthedocs.io/en/latest/
+
 This project is a low-level implementation of the "Data Store Pipeline" component described in the `Intelligent Document Processing Platform Solution Design <https://dev-exp-share.readthedocs.io/en/latest/search.html?q=Intelligent+Document+Processing+Platform+Solution+Design&check_keywords=yes&area=default>`_ solution.
 
 The term "low-level implementation" implies that this implementation does not rely on AWS services and performs pure in-memory computations. This implementation can be deployed on any platform and is not limited to the AWS ecosystem. It can be deployed as a batch job using virtual machines or containers, or it can be used for real-time processing with an event-driven architecture.
