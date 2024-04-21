@@ -67,7 +67,7 @@ class ComponentToTextractOutputResult(DataClass):
         delays: int = 5,
         timeout: int = 60,
         verbose: bool = True,
-    ):
+    ):  # pragma: no cover
         """
         Wait all Textract API call to succeed for this document.
         """
@@ -598,7 +598,7 @@ class BaseTracker(
         feature_types: T.List[str],
         sns_topic_arn: T.Optional[str] = None,
         role_arn: T.Optional[str] = None,
-    ):
+    ):  # pragma: no cover
         s3path_component = workspace.get_component_s3path(
             doc_id=self.doc_id,
             comp_id=comp_id,
@@ -646,7 +646,7 @@ class BaseTracker(
         sns_topic_arn: T.Optional[str] = None,
         role_arn: T.Optional[str] = None,
         debug: bool = False,
-    ) -> ComponentToTextractOutputResult:
+    ) -> ComponentToTextractOutputResult:  # pragma: no cover
         """
         See the :meth:`BaseTracker.component_to_textract_output` method for more details.
         """
@@ -745,7 +745,7 @@ class BaseTracker(
         sns_topic_arn: T.Optional[str] = None,
         role_arn: T.Optional[str] = None,
         debug: bool = False,
-    ) -> ComponentToTextractOutputResult:
+    ) -> ComponentToTextractOutputResult:  # pragma: no cover
         """
         Run textract analysis document API for each component.
 
@@ -785,7 +785,7 @@ class BaseTracker(
         job_id: str,
         comp_id: str,
         base_metadata: dict,
-    ):
+    ):  # pragma: no cover
         """
         This is a utility function to simplify the code.
         """
@@ -837,7 +837,7 @@ class BaseTracker(
         bsm: "BotoSesManager",
         workspace: "Workspace",
         debug: bool = False,
-    ):
+    ):  # pragma: no cover
         """
         See :meth:`BaseTracker.textract_output_to_text_and_json` for details.
         """
@@ -885,7 +885,7 @@ class BaseTracker(
         bsm: "BotoSesManager",
         workspace: "Workspace",
         debug: bool = False,
-    ):
+    ):  # pragma: no cover
         """
         Parse textract output data, and convert them into text and json view.
 

@@ -145,5 +145,5 @@ def get_doc_md5(
         DocTypeEnum.tsv.value,
     ]:
         return get_md5_of_bytes(s3path.read_bytes(bsm=bsm))
-    else:
+    else:  # pragma: no cover
         raise TypeError(f"Unsupported doc_type: {doc_type}")

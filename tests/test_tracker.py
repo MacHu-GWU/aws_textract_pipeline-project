@@ -6,6 +6,8 @@ from s3pathlib import S3Path
 from boto_session_manager import BotoSesManager
 
 from aws_textract_pipeline.doc_type import DocTypeEnum
+from aws_textract_pipeline.workspace import Workspace
+from aws_textract_pipeline.landing import LandingDocument
 from aws_textract_pipeline.tracker import (
     StatusEnum,
     BaseStatusAndUpdateTimeIndex,
@@ -13,6 +15,7 @@ from aws_textract_pipeline.tracker import (
     Data,
     Component,
 )
+from aws_textract_pipeline.paths import dir_unit_test
 from aws_textract_pipeline.tests.mock_test import BaseTest
 
 
@@ -36,36 +39,33 @@ class TestTracker(BaseTest):
         Tracker.create_table(wait=True)
 
     def test(self):
-        s3path_landing = S3Path(self.bucket, "root", "landing", "report.pdf")
-        tracker = Tracker.new(
-            task_id="doc-1",
-            data=Data(
-                landing_uri=s3path_landing.uri,
-                doc_type=DocTypeEnum.pdf.value,
-                components=[
-                    Component(id="000001"),
-                    Component(id="000002"),
-                    Component(id="000003"),
-                ],
-            ).to_dict(),
+        s3dir_root = S3Path(self.bucket, "root").to_dir()
+        ws = Workspace(s3dir_uri=s3dir_root.uri)
+        path_doc = dir_unit_test / "data" / "f1040.pdf"
+        s3path_landing = ws.s3dir_landing.joinpath(path_doc.name)
+        landing_doc = LandingDocument(
+            s3uri=s3path_landing.uri,
+            doc_type=DocTypeEnum.pdf.value,
+        )
+        landing_doc.dump(bsm=self.bsm, body=path_doc.read_bytes())
+        tracker = Tracker.new_from_landing_doc(
+            bsm=self.bsm,
+            landing_doc=landing_doc,
         )
 
-        tracker = Tracker.get_one_or_none(task_id="doc-1")
-
         # Test property method
-        assert tracker.doc_id == "doc-1"
+        # doc_id = tracker.doc_id
         assert tracker.data_obj.landing_uri == s3path_landing.uri
 
         # Test status transition
         assert tracker.status == StatusEnum.s01000_landing_to_raw_pending.value
 
-        with tracker.start_landing_to_textract(debug=False):
-            pass
+        tracker.landing_to_raw(bsm=self.bsm, workspace=ws, debug=False)
         assert tracker.status == StatusEnum.s01060_landing_to_raw_succeeded.value
 
-        with tracker.start_raw_to_component(debug=False):
-            pass
+        tracker.raw_to_component(bsm=self.bsm, workspace=ws, debug=False)
         assert tracker.status == StatusEnum.s02060_raw_to_component_succeeded.value
+        assert tracker.data_obj.n_components == 2
 
         with tracker.start_component_to_textract_output(debug=False):
             pass

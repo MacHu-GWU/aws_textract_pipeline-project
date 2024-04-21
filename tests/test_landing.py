@@ -7,6 +7,7 @@ from aws_textract_pipeline.landing import (
     MetadataKeyEnum,
     DocTypeEnum,
     get_tar_file_md5,
+    get_doc_md5,
 )
 from aws_textract_pipeline.paths import dir_unit_test
 from aws_textract_pipeline.tests.mock_test import BaseTest
@@ -30,6 +31,8 @@ class TestLandingDocument(BaseTest):
         doc = LandingDocument.load(bsm=self.bsm, s3path=s3path)
         assert doc.s3uri == s3path.uri
         assert doc.doc_type == DocTypeEnum.pdf.value
+
+        md5 = get_doc_md5(bsm=self.bsm, s3path=s3path, doc_type=DocTypeEnum.pdf.value)
 
     def test_get_tar_file_md5(self):
         path = dir_unit_test / "data" / "src.tar.gz"

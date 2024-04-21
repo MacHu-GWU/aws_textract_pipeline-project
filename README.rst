@@ -54,6 +54,8 @@ This project is a low-level implementation of the "Data Store Pipeline" componen
 
 The term "low-level implementation" implies that this implementation does not rely on AWS services and performs pure in-memory computations. This implementation can be deployed on any platform and is not limited to the AWS ecosystem. It can be deployed as a batch job using virtual machines or containers, or it can be used for real-time processing with an event-driven architecture.
 
+See usage example at `test_pipeline.py <https://github.com/MacHu-GWU/aws_textract_pipeline-project/blob/main/debug/test_pipeline.py>`_.
+
 
 .. _install:
 

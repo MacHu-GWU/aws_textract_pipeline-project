@@ -8,6 +8,7 @@ Usage example::
 
 from .doc_type import DocTypeEnum
 from .doc_type import S3ContentTypeEnum
+from .doc_type import ext_to_doc_type_mapper
 from .doc_type import doc_type_to_content_type_mapper
 from .workspace import Workspace
 from .landing import MetadataKeyEnum
