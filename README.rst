@@ -2,10 +2,8 @@
 .. image:: https://readthedocs.org/projects/aws-textract-pipeline/badge/?version=latest
     :target: https://aws-textract-pipeline.readthedocs.io/en/latest/
     :alt: Documentation Status
-
 .. image:: https://github.com/MacHu-GWU/aws_textract_pipeline-project/workflows/CI/badge.svg
     :target: https://github.com/MacHu-GWU/aws_textract_pipeline-project/actions?query=workflow:CI
-
 .. image:: https://codecov.io/gh/MacHu-GWU/aws_textract_pipeline-project/branch/main/graph/badge.svg
     :target: https://codecov.io/gh/MacHu-GWU/aws_textract_pipeline-project
 
