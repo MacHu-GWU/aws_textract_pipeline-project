@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 
+"""
+See:
+
+- :class:`SegmentPdfResult`
+- :func:`segment_pdf`
+"""
+
 import typing as T
 import io
 import dataclasses
@@ -11,6 +18,8 @@ from .vendor.better_dataclasses import DataClass
 @dataclasses.dataclass
 class SegmentPdfResult(DataClass):
     """
+    Returned object of :func:`segment_pdf`.
+
     To save ``fitz.Document`` object to local file, use the following code::
 
         >>> res = SegmentPdfResult(...)
@@ -38,7 +47,10 @@ def segment_pdf(
     dpi: int = 200,
 ) -> SegmentPdfResult:
     """
-    todo: add docstring
+    Segment PDF into pages.
+
+    :param pdf_content: PDF content in bytes.
+    :param dpi: DPI of the image.
     """
     # read original PDF into memory
     pdf = fitz.Document(stream=pdf_content)

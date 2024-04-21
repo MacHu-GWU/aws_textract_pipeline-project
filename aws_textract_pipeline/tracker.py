@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: add docstring
+See:
+
+- :class:`ComponentToTextractOutputResult`
+- :class:`Component`
+- :class:`Data`
+- :class:`Errors`
+- :class:`StatusEnum`
+- :class:`BaseStatusAndUpdateTimeIndex`
+- :class:`BaseTracker`
 """
 
 import typing as T
@@ -204,7 +212,58 @@ class BaseTracker(
     pm.patterns.status_tracker.BaseStatusTracker,
 ):
     """
-    Status tracker DynamoDB table ORM model.
+    Status tracker DynamoDB table ORM model. It is the main class of
+    the ``aws_textract_pipeline`` library. All the ETL logics are implemented
+    as its methods.
+
+    Main ETL Logics:
+
+    - :meth:`new_from_landing_doc`
+    - :meth:`landing_to_raw`
+    - :meth:`raw_to_component`
+    - :meth:`component_to_textract_output`
+    - :meth:`textract_output_to_text_and_json`
+
+    Status tracking management:
+
+    - :meth:`start_landing_to_raw`
+    - :meth:`start_raw_to_component`
+    - :meth:`start_component_to_textract_output`
+    - :meth:`start_textract_output_to_text_and_json`
+    - :meth:`start_json_to_extracted_data`
+    - :meth:`start_extracted_data_to_hil_output`
+    - :meth:`start_hil_output_to_hil_post_process`
+
+    Usage example:
+
+    .. code-block:: python
+
+        import aws_textract_pipeline.api as aws_textract_pipeline
+
+        class StatusAndUpdateTimeIndex(aws_textract_pipeline.BaseStatusAndUpdateTimeIndex):
+            pass
+
+        class Tracker(aws_textract_pipeline.BaseTracker):
+            class Meta:
+                table_name = "aws_textract_pipeline-tracker"
+                region = bsm.aws_region
+                billing_mode = pm.PAY_PER_REQUEST_BILLING_MODE
+
+            status_and_update_time_index = StatusAndUpdateTimeIndex()
+
+            # (optional) override default settings
+            JOB_ID = "your_own_project_name"
+            STATUS_ZERO_PAD = 6 # status code will be padded to 6 digits
+            MAX_RETRY = 3 # for each task, you can retry 3 times
+            LOCK_EXPIRE_SECONDS = 900 # lock will expire in 900 seconds
+            DEFAULT_STATUS = StatusEnum.s01000_landing_to_raw_pending.value # default status at very beginning of this pipeline
+            STATUS_ENUM = StatusEnum # you can extend the status enum if you want to add more status code and more ETL steps
+
+    You can find a more detailed example at https://github.com/MacHu-GWU/aws_textract_pipeline-project/blob/main/debug/test_pipeline.py
+
+    This implementation is based on the
+    `pynamodb_mate Status Tracker <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/status-tracker.ipynb>`_
+    framework.
     """
 
     JOB_ID = "tt_pipe"
@@ -589,7 +648,7 @@ class BaseTracker(
         debug: bool = False,
     ) -> ComponentToTextractOutputResult:
         """
-        Run textract analysis document API for each component.
+        See the :meth:`BaseTracker.component_to_textract_output` method for more details.
         """
         self.check_status_range(
             valid_status=[
@@ -687,6 +746,24 @@ class BaseTracker(
         role_arn: T.Optional[str] = None,
         debug: bool = False,
     ) -> ComponentToTextractOutputResult:
+        """
+        Run textract analysis document API for each component.
+
+        Wrapper of the :meth:`BaseTracker._component_to_textract_output` method.
+
+        :param bsm: ``boto_session_manager.BotoSesManager`` object.
+        :param workspace: :class:`aws_textract_pipeline.workspace.Workspace` object.
+        :param use_table_feature: at least one feature must be enabled.
+        :param use_form_feature: at least one feature must be enabled.
+        :param use_query_feature: at least one feature must be enabled.
+        :param use_signature_feature: at least one feature must be enabled.
+        :param use_layout_feature: at least one feature must be enabled.
+        :param sns_topic_arn: AWS SNS topic arn if you want to send a notification
+            when the job is done.
+        :param role_arn: the role arn that allows Amazon Textract to publish to the
+            SNS topic.
+        :param debug:
+        """
         with logger.disabled(disable=not debug):
             return self._component_to_textract_output(
                 bsm=bsm,
@@ -762,11 +839,7 @@ class BaseTracker(
         debug: bool = False,
     ):
         """
-        Parse textract output data, and convert them into text and json view.
-
-        :param bsm: ``boto_session_manager.BotoSesManager`` object.
-        :param workspace: :class:`aws_textract_pipeline.workspace.Workspace` object.
-        :param debug:
+        See :meth:`BaseTracker.textract_output_to_text_and_json` for details.
         """
         self.check_status_range(
             valid_status=[
@@ -813,6 +886,15 @@ class BaseTracker(
         workspace: "Workspace",
         debug: bool = False,
     ):
+        """
+        Parse textract output data, and convert them into text and json view.
+
+        Wrapper of the :meth:`BaseTracker._textract_output_to_text_and_json` method.
+
+        :param bsm: ``boto_session_manager.BotoSesManager`` object.
+        :param workspace: :class:`aws_textract_pipeline.workspace.Workspace` object.
+        :param debug:
+        """
         with logger.disabled(disable=not debug):
             return self._textract_output_to_text_and_json(
                 bsm=bsm,

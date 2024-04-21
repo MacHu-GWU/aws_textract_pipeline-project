@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """
-todo: add docstring
+See:
+
+- :class:`DocTypeEnum`
+- :class:`S3ContentTypeEnum`
 """
 
 import typing as T
@@ -11,7 +14,19 @@ from .vendor.better_enum import BetterStrEnum
 
 class DocTypeEnum(BetterStrEnum):
     """
-    Document Type Enum.
+    Enumeration for document types.
+
+    Each intake document will be classified into one of these types. This value is critical for
+    identifying the appropriate processing logic to apply in the downstream process.
+
+    For example:
+
+    - :func:`aws_textract_pipeline.landing.get_doc_md5`: This function uses the document type to
+      determine how to calculate a unique identifier for the document.
+    - :meth:`aws_textract_pipeline.tracker.BaseTracker.raw_to_component`: This method uses the
+      document type to determine how to segment the document.
+    - :meth:`aws_textract_pipeline.tracker.BaseTracker.component_to_textract_output`: This method
+      uses the document type to determine how to process the Textract output.
     """
 
     pdf = "pdf"
@@ -31,6 +46,11 @@ class DocTypeEnum(BetterStrEnum):
 
     @classmethod
     def detect_doc_type(cls, filename: str) -> str:
+        """
+        Detect document type based on file name.
+
+        :param filename: file name with extension, example: "example.pdf"
+        """
         parts = filename.lower().split(".")
         if len(parts) == 1:
             return cls.unknown.value
@@ -62,11 +82,15 @@ ext_to_doc_type_mapper = {
     "csv": DocTypeEnum.csv.value,
     "tsv": DocTypeEnum.tsv.value,
 }
+"""
+Mapping from file extension to :class:`DocTypeEnum`.
+"""
 
 
 class S3ContentTypeEnum(BetterStrEnum):
     """
-    AWS S3 Content Type
+    AWS S3 Content Type. Proper content type allow you to open the S3 object
+    in web browser without downloading it.
 
     Ref:
 
@@ -117,3 +141,6 @@ doc_type_to_content_type_mapper: T.Dict[str, T.Optional[str]] = {
     DocTypeEnum.tsv.value: S3ContentTypeEnum.csv.value,
     DocTypeEnum.unknown.value: None,
 }
+"""
+Mapping from :class:`DocTypeEnum` to :class:`S3ContentTypeEnum`.
+"""

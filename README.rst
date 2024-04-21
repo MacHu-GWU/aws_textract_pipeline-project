@@ -50,7 +50,9 @@
 
 Welcome to ``aws_textract_pipeline`` Documentation
 ==============================================================================
-该项目实现了我的博文 `Intelligent Document Processing Platform Solution Design <https://dev-exp-share.readthedocs.io/en/latest/search.html?q=Intelligent+Document+Processing+Platform+Solution+Design&check_keywords=yes&area=default>`_ 中 Data Store Pipeline 的部分. 这个项目中提供了很多关与这个 Pipeline 的核心组件, 例如 Status Tracking, S3 Bucket Structure, Textract API Call 等.
+This project is a low-level implementation of the "Data Store Pipeline" component described in the `Intelligent Document Processing Platform Solution Design <https://dev-exp-share.readthedocs.io/en/latest/search.html?q=Intelligent+Document+Processing+Platform+Solution+Design&check_keywords=yes&area=default>`_ solution.
+
+The term "low-level implementation" implies that this implementation does not rely on AWS services and performs pure in-memory computations. This implementation can be deployed on any platform and is not limited to the AWS ecosystem. It can be deployed as a batch job using virtual machines or containers, or it can be used for real-time processing with an event-driven architecture.
 
 
 .. _install:
