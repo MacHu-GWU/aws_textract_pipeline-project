@@ -14,5 +14,11 @@ from .landing import MetadataKeyEnum
 from .landing import LandingDocument
 from .landing import get_md5_of_bytes
 from .landing import get_tar_file_md5
+from .landing import get_doc_md5
+from .segment import SegmentPdfResult
+from .segment import segment_pdf
+from .tracker import ComponentToTextractOutputResult
+from .tracker import Component
+from .tracker import Data
 from .tracker import BaseStatusAndUpdateTimeIndex
 from .tracker import BaseTracker

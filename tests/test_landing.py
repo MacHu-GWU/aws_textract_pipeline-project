@@ -32,7 +32,7 @@ class TestLandingDocument(BaseTest):
         assert doc.doc_type == DocTypeEnum.pdf.value
 
     def test_get_tar_file_md5(self):
-        path = dir_unit_test / "src.tar.gz"
+        path = dir_unit_test / "data" / "src.tar.gz"
         s3path = S3Path(self.bucket, "src.tar.gz")
         s3path.upload_file(path)
         md5 = get_tar_file_md5(bsm=self.bsm, s3path=s3path)
