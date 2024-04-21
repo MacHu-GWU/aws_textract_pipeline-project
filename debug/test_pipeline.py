@@ -60,7 +60,7 @@ tracker = Tracker.new_from_landing_doc(bsm=bsm, landing_doc=landing_doc)
 tracker.landing_to_raw(bsm=bsm, workspace=ws, debug=True)
 components = tracker.raw_to_component(bsm=bsm, workspace=ws, clear_tmp_dir=True, debug=True)
 component_to_textract_output_result = tracker.component_to_textract_output(bsm=bsm, workspace=ws, use_form_feature=True, debug=True)
-rprint(component_to_textract_output_result)
+# rprint(component_to_textract_output_result) # for debug only
 component_to_textract_output_result.wait_document_analysis_job_to_succeed(bsm=bsm, timeout=300, verbose=True)
 
 # tracker = Tracker.get_one_or_none(task_id="5355b0c5deb635c613b45246475123c2") # for debug only
