@@ -19,7 +19,10 @@ from .landing import get_doc_md5
 from .segment import SegmentPdfResult
 from .segment import segment_pdf
 from .tracker import ComponentToTextractOutputResult
+from .tracker import TextractOutputToTextAndJsonResult
 from .tracker import Component
 from .tracker import Data
+from .tracker import StepEnum
+from .tracker import MoveToNextStepResult
 from .tracker import BaseStatusAndUpdateTimeIndex
 from .tracker import BaseTracker

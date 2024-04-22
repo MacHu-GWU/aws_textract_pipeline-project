@@ -15,6 +15,17 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
+0.3.1 (tbd)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- Add the following public API:
+    - ``aws_textract_pipeline.api.TextractOutputToTextAndJsonResult``
+    - ``aws_textract_pipeline.api.StepEnum``
+    - ``aws_textract_pipeline.api.MoveToNextStepResult``
+    - ``aws_textract_pipeline.api.BaseTracker.move_to_next_step_result``
+
+
 0.2.1 (2024-04-21)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Add the following public API:

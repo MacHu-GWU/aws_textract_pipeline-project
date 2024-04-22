@@ -21,6 +21,7 @@ from s3pathlib import S3Path
 from boto_session_manager import BotoSesManager
 
 import aws_textract.api as aws_textract
+from .vendor.better_enum import BetterStrEnum
 from .vendor.better_dataclasses import DataClass
 
 from .logger import logger
@@ -41,6 +42,15 @@ import json
 # ------------------------------------------------------------------------------
 # DynamoDB ORM Model
 # ------------------------------------------------------------------------------
+@dataclasses.dataclass
+class Component(DataClass):
+    """
+    Metadata for each component.
+    """
+
+    id: str = dataclasses.field()
+
+
 @dataclasses.dataclass
 class ComponentToTextractOutputResult(DataClass):
     """
@@ -93,12 +103,9 @@ class ComponentToTextractOutputResult(DataClass):
 
 
 @dataclasses.dataclass
-class Component(DataClass):
-    """
-    Metadata for each component.
-    """
-
-    id: str = dataclasses.field()
+class TextractOutputToTextAndJsonResult(DataClass):
+    text_list: T.List[str] = dataclasses.field(default_factory=list)
+    json_list: T.List[dict] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
@@ -196,6 +203,24 @@ class StatusEnum(pm.patterns.status_tracker.BaseStatusEnum):
     s09040_hil_output_to_hil_post_process_failed = 9040
     s09060_hil_output_to_hil_post_process_succeeded = 9060
     s09080_hil_output_to_hil_post_process_ignored = 9080
+
+
+class StepEnum(BetterStrEnum):
+    do_nothing = "do_nothing"
+    landing_to_raw = "landing_to_raw"
+    raw_to_component = "raw_to_component"
+    component_to_textract_output = "component_to_textract_output"
+    textract_output_to_text_and_json = "textract_output_to_text_and_json"
+
+
+@dataclasses.dataclass
+class MoveToNextStepResult(DataClass):
+    # fmt: off
+    step: str = dataclasses.field()
+    components: T.List[Component] = dataclasses.field(default_factory=list)
+    component_to_textract_output_result: T.Optional[ComponentToTextractOutputResult] = dataclasses.field(default=None)
+    textract_output_to_text_and_json_result: T.Optional[TextractOutputToTextAndJsonResult] = dataclasses.field(default=None)
+    # fmt: on
 
 
 class BaseStatusAndUpdateTimeIndex(
@@ -455,8 +480,8 @@ class BaseTracker(
         """
         self.check_status_range(
             valid_status=[
-                StatusEnum.s01000_landing_to_raw_pending.value,
-                StatusEnum.s01040_landing_to_raw_failed.value,
+                self.STATUS_ENUM.s01000_landing_to_raw_pending.value,
+                self.STATUS_ENUM.s01040_landing_to_raw_failed.value,
             ]
         )
         with self.start_landing_to_raw(debug=debug):
@@ -506,9 +531,9 @@ class BaseTracker(
         """
         self.check_status_range(
             valid_status=[
-                StatusEnum.s01060_landing_to_raw_succeeded.value,
-                StatusEnum.s02000_raw_to_component_pending.value,
-                StatusEnum.s02040_raw_to_component_failed.value,
+                self.STATUS_ENUM.s01060_landing_to_raw_succeeded.value,
+                self.STATUS_ENUM.s02000_raw_to_component_pending.value,
+                self.STATUS_ENUM.s02040_raw_to_component_failed.value,
             ]
         )
 
@@ -574,7 +599,7 @@ class BaseTracker(
         bsm: "BotoSesManager",
         workspace: "Workspace",
         tmp_dir: T_PATH_ARG = dir_tmp,
-        clear_tmp_dir: bool = False,
+        clear_tmp_dir: bool = True,
         debug: bool = False,
     ) -> T.List[Component]:
         """
@@ -652,9 +677,9 @@ class BaseTracker(
         """
         self.check_status_range(
             valid_status=[
-                StatusEnum.s02060_raw_to_component_succeeded.value,
-                StatusEnum.s03000_component_to_textract_output_pending.value,
-                StatusEnum.s03040_component_to_textract_output_failed.value,
+                self.STATUS_ENUM.s02060_raw_to_component_succeeded.value,
+                self.STATUS_ENUM.s03000_component_to_textract_output_pending.value,
+                self.STATUS_ENUM.s03040_component_to_textract_output_failed.value,
             ]
         )
 
@@ -785,7 +810,7 @@ class BaseTracker(
         job_id: str,
         comp_id: str,
         base_metadata: dict,
-    ):  # pragma: no cover
+    ) -> T.Tuple[str, dict]:  # pragma: no cover
         """
         This is a utility function to simplify the code.
         """
@@ -830,6 +855,7 @@ class BaseTracker(
             metadata=base_metadata,
             content_type=S3ContentTypeEnum.json.value,
         )
+        return text, res
 
     @logger.start_and_end(msg="Textract Output to Text and Json")
     def _textract_output_to_text_and_json(
@@ -837,15 +863,15 @@ class BaseTracker(
         bsm: "BotoSesManager",
         workspace: "Workspace",
         debug: bool = False,
-    ):  # pragma: no cover
+    ) -> TextractOutputToTextAndJsonResult:  # pragma: no cover
         """
         See :meth:`BaseTracker.textract_output_to_text_and_json` for details.
         """
         self.check_status_range(
             valid_status=[
-                StatusEnum.s03060_component_to_textract_output_succeeded.value,
-                StatusEnum.s05000_textract_output_to_text_and_json_pending.value,
-                StatusEnum.s05040_textract_output_to_text_and_json_failed.value,
+                self.STATUS_ENUM.s03060_component_to_textract_output_succeeded.value,
+                self.STATUS_ENUM.s05000_textract_output_to_text_and_json_pending.value,
+                self.STATUS_ENUM.s05040_textract_output_to_text_and_json_failed.value,
             ]
         )
 
@@ -855,37 +881,43 @@ class BaseTracker(
         )
         s3path_raw = workspace.get_raw_s3path(doc_id=self.doc_id)
         metadata = s3path_raw.metadata.copy()
+        textract_output_to_text_and_json_result = TextractOutputToTextAndJsonResult()
         with self.start_textract_output_to_text_and_json(debug=debug):
             if component_to_textract_output_result.is_single_textract_api_call:
                 comp_id = _root_
                 job_id = component_to_textract_output_result.job_id
-                self._textract_output_to_text_and_json_helper(
+                text, res = self._textract_output_to_text_and_json_helper(
                     bsm=bsm,
                     workspace=workspace,
                     job_id=job_id,
                     comp_id=comp_id,
                     base_metadata=metadata,
                 )
+                textract_output_to_text_and_json_result.text_list.append(text)
+                textract_output_to_text_and_json_result.json_list.append(res)
             else:
                 for comp, job_id in zip(
                     data_obj.components,
                     component_to_textract_output_result.job_id_list,
                 ):
                     comp_id = comp.id
-                    self._textract_output_to_text_and_json_helper(
+                    text, res = self._textract_output_to_text_and_json_helper(
                         bsm=bsm,
                         workspace=workspace,
                         job_id=job_id,
                         comp_id=comp_id,
                         base_metadata=metadata,
                     )
+                    textract_output_to_text_and_json_result.text_list.append(text)
+                    textract_output_to_text_and_json_result.json_list.append(res)
+        return textract_output_to_text_and_json_result
 
     def textract_output_to_text_and_json(
         self,
         bsm: "BotoSesManager",
         workspace: "Workspace",
         debug: bool = False,
-    ):  # pragma: no cover
+    ) -> TextractOutputToTextAndJsonResult:  # pragma: no cover
         """
         Parse textract output data, and convert them into text and json view.
 
@@ -901,3 +933,85 @@ class BaseTracker(
                 workspace=workspace,
                 debug=debug,
             )
+
+    def move_to_next_stage(
+        self,
+        bsm: "BotoSesManager",
+        workspace: "Workspace",
+        tmp_dir: T_PATH_ARG = dir_tmp,
+        clear_tmp_dir: bool = True,
+        use_table_feature: bool = False,
+        use_form_feature: bool = False,
+        use_query_feature: bool = False,
+        use_signature_feature: bool = False,
+        use_layout_feature: bool = False,
+        sns_topic_arn: T.Optional[str] = None,
+        role_arn: T.Optional[str] = None,
+        debug: bool = False,
+    ):
+        """
+        Move the document to the next step of the pipeline. Smartly execute
+        one of the following step:
+
+        - :meth:`landing_to_raw`
+        - :meth:`raw_to_component`
+        - :meth:`component_to_textract_output`
+        - :meth:`textract_output_to_text_and_json`
+        """
+        move_to_next_status_result = MoveToNextStepResult(
+            step=StepEnum.do_nothing.value,
+        )
+        # fmt: off
+        if self.status in [
+            self.STATUS_ENUM.s01000_landing_to_raw_pending.value,
+            self.STATUS_ENUM.s01020_landing_to_raw_in_progress.value,
+        ]:
+            self.landing_to_raw(bsm=bsm, workspace=workspace, debug=debug)
+            move_to_next_status_result.step = StepEnum.landing_to_raw.value
+        elif self.status == self.STATUS_ENUM.s01020_landing_to_raw_in_progress.value:
+            if self.is_locked() is False:
+                self.landing_to_raw(bsm=bsm, workspace=workspace, debug=debug)
+                move_to_next_status_result.step = StepEnum.landing_to_raw.value
+        elif self.status in [
+            self.STATUS_ENUM.s01060_landing_to_raw_succeeded.value,
+            self.STATUS_ENUM.s02000_raw_to_component_pending.value,
+            self.STATUS_ENUM.s02040_raw_to_component_failed.value,
+        ]:
+            components = self.raw_to_component(bsm=bsm, workspace=workspace, tmp_dir=tmp_dir, clear_tmp_dir=clear_tmp_dir, debug=debug)
+            move_to_next_status_result.step = StepEnum.raw_to_component.value
+            move_to_next_status_result.components = components
+        elif self.status == self.STATUS_ENUM.s02020_raw_to_component_in_progress.value:
+            if self.is_locked() is False:
+                components = self.raw_to_component(bsm=bsm, workspace=workspace, tmp_dir=tmp_dir, clear_tmp_dir=clear_tmp_dir, debug=debug)
+                move_to_next_status_result.step = StepEnum.raw_to_component.value
+                move_to_next_status_result.components = components
+        elif self.status in [
+            self.STATUS_ENUM.s02060_raw_to_component_succeeded.value,
+            self.STATUS_ENUM.s03000_component_to_textract_output_pending.value,
+            self.STATUS_ENUM.s03040_component_to_textract_output_failed.value,
+        ]:
+            component_to_textract_output_result = self.component_to_textract_output(bsm=bsm, workspace=workspace, use_table_feature=use_table_feature, use_form_feature=use_form_feature, use_query_feature=use_query_feature, use_signature_feature=use_signature_feature, use_layout_feature=use_layout_feature, sns_topic_arn=sns_topic_arn, role_arn=role_arn, debug=debug)
+            move_to_next_status_result.step = StepEnum.component_to_textract_output.value
+            move_to_next_status_result.component_to_textract_output_result = component_to_textract_output_result
+        elif self.status == self.STATUS_ENUM.s03020_component_to_textract_output_in_progress.value:
+            if self.is_locked() is False:
+                component_to_textract_output_result = self.component_to_textract_output(bsm=bsm, workspace=workspace, use_table_feature=use_table_feature, use_form_feature=use_form_feature, use_query_feature=use_query_feature, use_signature_feature=use_signature_feature, use_layout_feature=use_layout_feature, sns_topic_arn=sns_topic_arn, role_arn=role_arn, debug=debug)
+                move_to_next_status_result.step = StepEnum.component_to_textract_output.value
+                move_to_next_status_result.component_to_textract_output_result = component_to_textract_output_result
+        elif self.status in [
+            self.STATUS_ENUM.s03060_component_to_textract_output_succeeded.value,
+            self.STATUS_ENUM.s05000_textract_output_to_text_and_json_pending.value,
+            self.STATUS_ENUM.s05040_textract_output_to_text_and_json_failed.value,
+        ]:
+            textract_output_to_text_and_json_result = self.textract_output_to_text_and_json(bsm=bsm, workspace=workspace, debug=debug)
+            move_to_next_status_result.step = StepEnum.textract_output_to_text_and_json.value
+            move_to_next_status_result.textract_output_to_text_and_json_result = textract_output_to_text_and_json_result
+        elif self.status == self.STATUS_ENUM.s05020_textract_output_to_text_and_json_in_progress.value:
+            if self.is_locked() is False:
+                textract_output_to_text_and_json_result = self.textract_output_to_text_and_json(bsm=bsm, workspace=workspace, debug=debug)
+                move_to_next_status_result.step = StepEnum.textract_output_to_text_and_json.value
+                move_to_next_status_result.textract_output_to_text_and_json_result = textract_output_to_text_and_json_result
+        else: # ignored status
+            pass
+        # fmt: on
+        return move_to_next_status_result
