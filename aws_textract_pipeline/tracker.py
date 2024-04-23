@@ -934,6 +934,54 @@ class BaseTracker(
                 debug=debug,
             )
 
+    def get_next_step(self) -> StepEnum:  # pragma: no cover
+        """
+        Identify the next step of the pipeline based on the current status.
+        """
+        if self.status in [
+            self.STATUS_ENUM.s01000_landing_to_raw_pending.value,
+            self.STATUS_ENUM.s01020_landing_to_raw_in_progress.value,
+        ]:
+            return StepEnum.landing_to_raw
+        elif self.status == self.STATUS_ENUM.s01020_landing_to_raw_in_progress.value:
+            if self.is_locked() is False:
+                return StepEnum.landing_to_raw
+        elif self.status in [
+            self.STATUS_ENUM.s01060_landing_to_raw_succeeded.value,
+            self.STATUS_ENUM.s02000_raw_to_component_pending.value,
+            self.STATUS_ENUM.s02040_raw_to_component_failed.value,
+        ]:
+            return StepEnum.raw_to_component
+        elif self.status == self.STATUS_ENUM.s02020_raw_to_component_in_progress.value:
+            if self.is_locked() is False:
+                return StepEnum.raw_to_component
+        elif self.status in [
+            self.STATUS_ENUM.s02060_raw_to_component_succeeded.value,
+            self.STATUS_ENUM.s03000_component_to_textract_output_pending.value,
+            self.STATUS_ENUM.s03040_component_to_textract_output_failed.value,
+        ]:
+            return StepEnum.component_to_textract_output
+        elif (
+            self.status
+            == self.STATUS_ENUM.s03020_component_to_textract_output_in_progress.value
+        ):
+            if self.is_locked() is False:
+                return StepEnum.component_to_textract_output
+        elif self.status in [
+            self.STATUS_ENUM.s03060_component_to_textract_output_succeeded.value,
+            self.STATUS_ENUM.s05000_textract_output_to_text_and_json_pending.value,
+            self.STATUS_ENUM.s05040_textract_output_to_text_and_json_failed.value,
+        ]:
+            return StepEnum.textract_output_to_text_and_json
+        elif (
+            self.status
+            == self.STATUS_ENUM.s05020_textract_output_to_text_and_json_in_progress.value
+        ):
+            if self.is_locked() is False:
+                return StepEnum.textract_output_to_text_and_json
+        else:  # ignored status
+            pass
+
     def move_to_next_stage(
         self,
         bsm: "BotoSesManager",
@@ -948,7 +996,7 @@ class BaseTracker(
         sns_topic_arn: T.Optional[str] = None,
         role_arn: T.Optional[str] = None,
         debug: bool = False,
-    ):
+    ):  # pragma: no cover
         """
         Move the document to the next step of the pipeline. Smartly execute
         one of the following step:
@@ -958,60 +1006,53 @@ class BaseTracker(
         - :meth:`component_to_textract_output`
         - :meth:`textract_output_to_text_and_json`
         """
-        move_to_next_status_result = MoveToNextStepResult(
-            step=StepEnum.do_nothing.value,
-        )
-        # fmt: off
-        if self.status in [
-            self.STATUS_ENUM.s01000_landing_to_raw_pending.value,
-            self.STATUS_ENUM.s01020_landing_to_raw_in_progress.value,
-        ]:
+        next_step = self.get_next_step()
+        if next_step is StepEnum.landing_to_raw:
             self.landing_to_raw(bsm=bsm, workspace=workspace, debug=debug)
-            move_to_next_status_result.step = StepEnum.landing_to_raw.value
-        elif self.status == self.STATUS_ENUM.s01020_landing_to_raw_in_progress.value:
-            if self.is_locked() is False:
-                self.landing_to_raw(bsm=bsm, workspace=workspace, debug=debug)
-                move_to_next_status_result.step = StepEnum.landing_to_raw.value
-        elif self.status in [
-            self.STATUS_ENUM.s01060_landing_to_raw_succeeded.value,
-            self.STATUS_ENUM.s02000_raw_to_component_pending.value,
-            self.STATUS_ENUM.s02040_raw_to_component_failed.value,
-        ]:
-            components = self.raw_to_component(bsm=bsm, workspace=workspace, tmp_dir=tmp_dir, clear_tmp_dir=clear_tmp_dir, debug=debug)
-            move_to_next_status_result.step = StepEnum.raw_to_component.value
-            move_to_next_status_result.components = components
-        elif self.status == self.STATUS_ENUM.s02020_raw_to_component_in_progress.value:
-            if self.is_locked() is False:
-                components = self.raw_to_component(bsm=bsm, workspace=workspace, tmp_dir=tmp_dir, clear_tmp_dir=clear_tmp_dir, debug=debug)
-                move_to_next_status_result.step = StepEnum.raw_to_component.value
-                move_to_next_status_result.components = components
-        elif self.status in [
-            self.STATUS_ENUM.s02060_raw_to_component_succeeded.value,
-            self.STATUS_ENUM.s03000_component_to_textract_output_pending.value,
-            self.STATUS_ENUM.s03040_component_to_textract_output_failed.value,
-        ]:
-            component_to_textract_output_result = self.component_to_textract_output(bsm=bsm, workspace=workspace, use_table_feature=use_table_feature, use_form_feature=use_form_feature, use_query_feature=use_query_feature, use_signature_feature=use_signature_feature, use_layout_feature=use_layout_feature, sns_topic_arn=sns_topic_arn, role_arn=role_arn, debug=debug)
-            move_to_next_status_result.step = StepEnum.component_to_textract_output.value
-            move_to_next_status_result.component_to_textract_output_result = component_to_textract_output_result
-        elif self.status == self.STATUS_ENUM.s03020_component_to_textract_output_in_progress.value:
-            if self.is_locked() is False:
-                component_to_textract_output_result = self.component_to_textract_output(bsm=bsm, workspace=workspace, use_table_feature=use_table_feature, use_form_feature=use_form_feature, use_query_feature=use_query_feature, use_signature_feature=use_signature_feature, use_layout_feature=use_layout_feature, sns_topic_arn=sns_topic_arn, role_arn=role_arn, debug=debug)
-                move_to_next_status_result.step = StepEnum.component_to_textract_output.value
-                move_to_next_status_result.component_to_textract_output_result = component_to_textract_output_result
-        elif self.status in [
-            self.STATUS_ENUM.s03060_component_to_textract_output_succeeded.value,
-            self.STATUS_ENUM.s05000_textract_output_to_text_and_json_pending.value,
-            self.STATUS_ENUM.s05040_textract_output_to_text_and_json_failed.value,
-        ]:
-            textract_output_to_text_and_json_result = self.textract_output_to_text_and_json(bsm=bsm, workspace=workspace, debug=debug)
-            move_to_next_status_result.step = StepEnum.textract_output_to_text_and_json.value
-            move_to_next_status_result.textract_output_to_text_and_json_result = textract_output_to_text_and_json_result
-        elif self.status == self.STATUS_ENUM.s05020_textract_output_to_text_and_json_in_progress.value:
-            if self.is_locked() is False:
-                textract_output_to_text_and_json_result = self.textract_output_to_text_and_json(bsm=bsm, workspace=workspace, debug=debug)
-                move_to_next_status_result.step = StepEnum.textract_output_to_text_and_json.value
-                move_to_next_status_result.textract_output_to_text_and_json_result = textract_output_to_text_and_json_result
-        else: # ignored status
-            pass
+            return MoveToNextStepResult(
+                step=StepEnum.landing_to_raw.value,
+            )
+        elif next_step is StepEnum.raw_to_component:
+            components = self.raw_to_component(
+                bsm=bsm,
+                workspace=workspace,
+                tmp_dir=tmp_dir,
+                clear_tmp_dir=clear_tmp_dir,
+                debug=debug,
+            )
+            return MoveToNextStepResult(
+                step=StepEnum.raw_to_component.value,
+                components=components,
+            )
+        elif next_step is StepEnum.component_to_textract_output:
+            component_to_textract_output_result = self.component_to_textract_output(
+                bsm=bsm,
+                workspace=workspace,
+                use_table_feature=use_table_feature,
+                use_form_feature=use_form_feature,
+                use_query_feature=use_query_feature,
+                use_signature_feature=use_signature_feature,
+                use_layout_feature=use_layout_feature,
+                sns_topic_arn=sns_topic_arn,
+                role_arn=role_arn,
+                debug=debug,
+            )
+            return MoveToNextStepResult(
+                step=StepEnum.component_to_textract_output.value,
+                component_to_textract_output_result=component_to_textract_output_result,
+            )
+        elif next_step is StepEnum.textract_output_to_text_and_json:
+            textract_output_to_text_and_json_result = (
+                self.textract_output_to_text_and_json(
+                    bsm=bsm, workspace=workspace, debug=debug
+                )
+            )
+            return MoveToNextStepResult(
+                step=StepEnum.textract_output_to_text_and_json.value,
+                textract_output_to_text_and_json_result=textract_output_to_text_and_json_result,
+            )
+        else:  # ignored status
+            return MoveToNextStepResult(
+                step=StepEnum.do_nothing.value,
+            )
         # fmt: on
-        return move_to_next_status_result

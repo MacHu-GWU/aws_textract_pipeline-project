@@ -15,7 +15,7 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
-0.3.1 (tbd)
+0.3.1 (2024-04-23)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
@@ -23,6 +23,7 @@ x.y.z (Backlog)
     - ``aws_textract_pipeline.api.TextractOutputToTextAndJsonResult``
     - ``aws_textract_pipeline.api.StepEnum``
     - ``aws_textract_pipeline.api.MoveToNextStepResult``
+    - ``aws_textract_pipeline.api.BaseTracker.get_next_step``
     - ``aws_textract_pipeline.api.BaseTracker.move_to_next_step_result``
 
 
