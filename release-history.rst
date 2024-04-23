@@ -15,6 +15,18 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
+0.4.1 (2024-04-23)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- Allow user to specify the feature types in ``aws_textract_pipeline.api.LandingDocument`` in S3 object metadata.
+- Allow user to specify the ``single_api_call`` flag in ``aws_textract_pipeline.api.BaseTracker.component_to_textract_output`` step.
+
+**Bugfixes**
+
+- Fix a bug that ``aws_textract_pipeline.api.BaseTracker.component_to_textract_output`` doesn't work properly when making only one Textract API call.
+
+
 0.3.1 (2024-04-23)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**

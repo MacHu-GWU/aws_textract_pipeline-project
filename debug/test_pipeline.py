@@ -52,6 +52,7 @@ Tracker.delete_all()
 landing_doc = aws_textract_pipeline.LandingDocument(
     s3uri=ws.s3dir_landing.joinpath(path_doc.basename).uri,
     doc_type=aws_textract_pipeline.DocTypeEnum.pdf.value,
+    features=["FORMS"],
 )
 landing_doc.dump(bsm=bsm, body=path_doc.read_bytes())
 

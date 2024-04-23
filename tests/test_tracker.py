@@ -46,6 +46,7 @@ class TestTracker(BaseTest):
         landing_doc = LandingDocument(
             s3uri=s3path_landing.uri,
             doc_type=DocTypeEnum.pdf.value,
+            features=["FORMS"],
         )
         landing_doc.dump(bsm=self.bsm, body=path_doc.read_bytes())
         tracker = Tracker.new_from_landing_doc(

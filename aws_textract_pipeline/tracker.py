@@ -125,6 +125,7 @@ class Data(DataClass):
     # fmt: off
     landing_uri: str = dataclasses.field()
     doc_type: str = dataclasses.field()
+    features: T.List[str] = dataclasses.field(default_factory=list)
     components: T.List[Component] = Component.list_of_nested_field(default_factory=list)
     component_to_textract_output_result: T.Optional[ComponentToTextractOutputResult] = ComponentToTextractOutputResult.nested_field(default=None)
     # fmt: on
@@ -464,6 +465,7 @@ class BaseTracker(
             data=Data(
                 landing_uri=landing_doc.s3uri,
                 doc_type=landing_doc.doc_type,
+                features=landing_doc.features,
             ).to_dict(),
             save=True,
         )
@@ -618,16 +620,13 @@ class BaseTracker(
         self,
         bsm: "BotoSesManager",
         workspace: "Workspace",
+        s3path_component: S3Path,
         doc_id: str,
         comp_id: str,
         feature_types: T.List[str],
         sns_topic_arn: T.Optional[str] = None,
         role_arn: T.Optional[str] = None,
     ):  # pragma: no cover
-        s3path_component = workspace.get_component_s3path(
-            doc_id=self.doc_id,
-            comp_id=comp_id,
-        )
         s3dir_textract_output = workspace.get_textract_output_s3dir(
             doc_id=doc_id,
             comp_id=comp_id,
@@ -663,6 +662,7 @@ class BaseTracker(
         self,
         bsm: "BotoSesManager",
         workspace: "Workspace",
+        single_api_call: T.Optional[bool] = None,
         use_table_feature: bool = False,
         use_form_feature: bool = False,
         use_query_feature: bool = False,
@@ -683,7 +683,13 @@ class BaseTracker(
             ]
         )
 
+        doc_id = self.doc_id
+        data_obj = self.data_obj
+
         # prepare textract API arguments
+        # for feature types, if user manually specified the feature types
+        # in this method, then use it. Otherwise, use the feature types
+        # from the landing document S3 object metadata
         feature_types = list()
         for flag, feature in [
             (use_table_feature, "TABLES"),
@@ -695,27 +701,35 @@ class BaseTracker(
             if flag:
                 feature_types.append(feature)
         if len(feature_types) == 0:
-            raise ValueError("At least one feature must be enabled.")
+            if data_obj.features:
+                feature_types = data_obj.features
+            else:
+                raise ValueError(
+                    "Cannot find textract features specification in S3 object metadata!"
+                )
 
         with self.start_component_to_textract_output(debug=debug):
-            doc_id = self.doc_id
-            data_obj = self.data_obj
             s3path_raw = workspace.get_raw_s3path(doc_id=doc_id)
             # ------------------------------------------------------------------
             # PDF
             # ------------------------------------------------------------------
             if data_obj.doc_type == DocTypeEnum.pdf.value:
-                # check if the document fit Amazon Textract Async API quota
-                # if fit, then only make one API call for the whole document.
-                if (
-                    # s3path_raw.size <= 300_000_000
-                    s3path_raw.size <= 1
-                    and data_obj.n_components <= 3000
-                ):
+                if single_api_call is None:
+                    # check if the document fit Amazon Textract Async API quota
+                    # if fit, then only make one API call for the whole document.
+                    if s3path_raw.size <= 300_000_000 and data_obj.n_components <= 3000:
+                        is_single_textract_api_call = True
+                    else:
+                        is_single_textract_api_call = False
+                else:
+                    is_single_textract_api_call = single_api_call
+
+                if is_single_textract_api_call:
                     comp_id = _root_
                     job_id = self._component_to_textract_output_helper(
                         bsm=bsm,
                         workspace=workspace,
+                        s3path_component=s3path_raw,
                         doc_id=doc_id,
                         comp_id=comp_id,
                         feature_types=feature_types,
@@ -743,6 +757,10 @@ class BaseTracker(
                         job_id = self._component_to_textract_output_helper(
                             bsm=bsm,
                             workspace=workspace,
+                            s3path_component=workspace.get_component_s3path(
+                                doc_id=doc_id,
+                                comp_id=comp_id,
+                            ),
                             doc_id=doc_id,
                             comp_id=comp_id,
                             feature_types=feature_types,
@@ -762,6 +780,7 @@ class BaseTracker(
         self,
         bsm: "BotoSesManager",
         workspace: "Workspace",
+        single_api_call: T.Optional[bool] = None,
         use_table_feature: bool = False,
         use_form_feature: bool = False,
         use_query_feature: bool = False,
@@ -778,6 +797,11 @@ class BaseTracker(
 
         :param bsm: ``boto_session_manager.BotoSesManager`` object.
         :param workspace: :class:`aws_textract_pipeline.workspace.Workspace` object.
+        :param single_api_call: if None, the library will automatically decide
+            whether to use single API call or multiple API calls based on the
+            document size and number of components. If True, only one API call
+            will be made for the whole document. If False, multiple API calls
+            will be made for each component.
         :param use_table_feature: at least one feature must be enabled.
         :param use_form_feature: at least one feature must be enabled.
         :param use_query_feature: at least one feature must be enabled.
@@ -793,6 +817,7 @@ class BaseTracker(
             return self._component_to_textract_output(
                 bsm=bsm,
                 workspace=workspace,
+                single_api_call=single_api_call,
                 use_table_feature=use_table_feature,
                 use_form_feature=use_form_feature,
                 use_query_feature=use_query_feature,
@@ -988,6 +1013,7 @@ class BaseTracker(
         workspace: "Workspace",
         tmp_dir: T_PATH_ARG = dir_tmp,
         clear_tmp_dir: bool = True,
+        single_api_call: T.Optional[bool] = None,
         use_table_feature: bool = False,
         use_form_feature: bool = False,
         use_query_feature: bool = False,
@@ -1028,6 +1054,7 @@ class BaseTracker(
             component_to_textract_output_result = self.component_to_textract_output(
                 bsm=bsm,
                 workspace=workspace,
+                single_api_call=single_api_call,
                 use_table_feature=use_table_feature,
                 use_form_feature=use_form_feature,
                 use_query_feature=use_query_feature,

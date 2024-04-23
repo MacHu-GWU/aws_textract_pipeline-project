@@ -4,8 +4,9 @@
 Landing bucket is where the intake documents are stored at the beginning of the pipeline.
 """
 
-import dataclasses
+import typing as T
 import tarfile
+import dataclasses
 
 from s3pathlib import S3Path
 from boto_session_manager import BotoSesManager
@@ -22,6 +23,7 @@ class MetadataKeyEnum(BetterStrEnum):
     doc_type = "doc_type"
     doc_id = "doc_id"
     component_id = "component_id"
+    features = "features"
 
 
 @dataclasses.dataclass
@@ -33,11 +35,13 @@ class LandingDocument(DataClass):
         {
             "landing_s3uri": "s3://bucket/key" # the S3 URI of the document in landing zone
             "doc_type": "pdf|word|excel|ppt|image|..." # the type of the document
+            "features": ["TABLES"|"FORMS"|"QUERIES"|"SIGNATURES"|"LAYOUT", ...]
         }
     """
 
     s3uri: str = dataclasses.field()
     doc_type: str = dataclasses.field()
+    features: T.List[str] = dataclasses.field()
 
     @classmethod
     def load(
@@ -53,10 +57,12 @@ class LandingDocument(DataClass):
         """
         s3path.head_object(bsm=bsm)
         doc_type = s3path.metadata[MetadataKeyEnum.doc_type.value]
+        features = s3path.metadata.get(MetadataKeyEnum.features.value, "").split(",")
         DocTypeEnum.ensure_is_valid_value(doc_type)
         return cls(
             s3uri=s3path.uri,
             doc_type=doc_type,
+            features=features,
         )
 
     def dump(
@@ -78,6 +84,7 @@ class LandingDocument(DataClass):
             metadata={
                 MetadataKeyEnum.landing_s3uri.value: self.s3uri,
                 MetadataKeyEnum.doc_type.value: self.doc_type,
+                MetadataKeyEnum.features.value: ",".join(self.features),
             },
             content_type=doc_type_to_content_type_mapper[self.doc_type],
             bsm=bsm,

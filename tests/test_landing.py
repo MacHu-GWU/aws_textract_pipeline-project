@@ -21,12 +21,13 @@ class TestLandingDocument(BaseTest):
     def test_load_and_dump(self):
         s3path = S3Path(self.bucket, "landing/test.pdf")
 
-        doc = LandingDocument(s3uri=s3path.uri, doc_type=DocTypeEnum.pdf.value)
+        doc = LandingDocument(s3uri=s3path.uri, doc_type=DocTypeEnum.pdf.value, features=["FORMS"])
         doc.dump(bsm=self.bsm, body=b"test")
 
         s3path.head_object(bsm=self.bsm)
         assert s3path.read_text() == "test"
         assert s3path.metadata[MetadataKeyEnum.doc_type.value] == DocTypeEnum.pdf.value
+        assert s3path.metadata[MetadataKeyEnum.features.value] == "FORMS"
 
         doc = LandingDocument.load(bsm=self.bsm, s3path=s3path)
         assert doc.s3uri == s3path.uri
