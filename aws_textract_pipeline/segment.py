@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
+This module provides utilities to segment a document into components.
+
 See:
 
 - :class:`SegmentPdfResult`

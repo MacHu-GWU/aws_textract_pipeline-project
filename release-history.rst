@@ -8,6 +8,8 @@ x.y.z (Backlog)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
+- Allow user to explicitly set list of views to create in the metadata in landing zone. If not explicitly set, use the default setup.
+
 **Minor Improvements**
 
 **Bugfixes**
