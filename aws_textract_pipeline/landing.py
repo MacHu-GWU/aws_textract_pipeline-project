@@ -22,8 +22,8 @@ class MetadataKeyEnum(BetterStrEnum):
     landing_s3uri = "landing_s3uri"
     doc_type = "doc_type"
     doc_id = "doc_id"
-    component_id = "component_id"
-    features = "features"
+    frag_id = "frag_id"
+    textract_features = "textract_features"
 
 
 @dataclasses.dataclass
@@ -57,7 +57,7 @@ class LandingDocument(DataClass):
         """
         s3path.head_object(bsm=bsm)
         doc_type = s3path.metadata[MetadataKeyEnum.doc_type.value]
-        features = s3path.metadata.get(MetadataKeyEnum.features.value, "").split(",")
+        features = s3path.metadata.get(MetadataKeyEnum.textract_features.value, "").split(",")
         DocTypeEnum.ensure_is_valid_value(doc_type)
         return cls(
             s3uri=s3path.uri,
@@ -84,7 +84,7 @@ class LandingDocument(DataClass):
             metadata={
                 MetadataKeyEnum.landing_s3uri.value: self.s3uri,
                 MetadataKeyEnum.doc_type.value: self.doc_type,
-                MetadataKeyEnum.features.value: ",".join(self.features),
+                MetadataKeyEnum.textract_features.value: ",".join(self.features),
             },
             content_type=doc_type_to_content_type_mapper[self.doc_type],
             bsm=bsm,

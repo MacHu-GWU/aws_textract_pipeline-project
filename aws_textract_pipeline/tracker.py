@@ -16,7 +16,7 @@ import typing as T
 import dataclasses
 
 from pathlib_mate import Path, T_PATH_ARG
-import pynamodb_mate as pm
+import pynamodb_mate.api as pm
 from s3pathlib import S3Path
 from boto_session_manager import BotoSesManager
 

@@ -15,6 +15,13 @@ def test():
     _ = api.BaseStatusAndUpdateTimeIndex
     _ = api.BaseTracker
 
+    _ = api.types.DocTypeEnum
+    _ = api.types.ext_to_doc_type_mapper
+    _ = api.types.S3ContentTypeEnum
+    _ = api.types.doc_type_to_content_type_mapper
+    _ = api.fragments.pdf.DividePdfIntoPagesResult
+    _ = api.fragments.pdf.divide_pdf_into_pages
+
 
 if __name__ == "__main__":
     from aws_textract_pipeline.tests import run_cov_test
