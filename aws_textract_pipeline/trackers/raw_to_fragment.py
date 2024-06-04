@@ -2,7 +2,6 @@
 
 from pathlib_mate import Path, T_PATH_ARG
 import pynamodb_mate.api as pm
-from s3pathlib import S3Path
 from boto_session_manager import BotoSesManager
 
 from ..logger import logger
@@ -53,7 +52,9 @@ class RawToFragmentTask(BaseTask):
         exec_ctx: pm.patterns.status_tracker.ExecutionContext
         with cls.start(
             task_id=doc_id,
-            allowed_status=[StatusEnum.s0160_landing_to_raw_succeeded.value],
+            allowed_status=[
+                StatusEnum.s0160_landing_to_raw_succeeded.value,
+            ],
             detailed_error=detailed_error,
             debug=debug,
         ) as exec_ctx:

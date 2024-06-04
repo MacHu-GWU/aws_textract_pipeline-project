@@ -43,14 +43,19 @@ class LandingToRawTask(aws_textract_pipeline.trackers.LandingToRawTask):
 
 
 class RawToFragmentTask(aws_textract_pipeline.trackers.RawToFragmentTask):
-    # Meta = DynamoDBTableMeta
-
-    class Meta:
-        table_name = "aws_textract_pipeline-tracker"
-        region = bsm.aws_region
-        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
-
+    Meta = DynamoDBTableMeta
     status_and_update_time_index = StatusAndUpdateTimeIndex()
+
+
+class FragmentToTextractDocumentAnalysisOutputTask(aws_textract_pipeline.trackers.FragmentToTextractDocumentAnalysisOutputTask):
+    Meta = DynamoDBTableMeta
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
+
+
+class TextractDocumentAnalysisOutputToTextAndJsonTask(aws_textract_pipeline.trackers.TextractDocumentAnalysisOutputToTextAndJsonTask):
+    Meta = DynamoDBTableMeta
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
+
 
 
 # Create the DynamoDB table
@@ -82,7 +87,9 @@ doc_id = landing_to_raw_task.doc_id
 # --- method 1
 LandingToRawTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
 RawToFragmentTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, clear_tmp_dir=True, detailed_error=True, debug=True)
-
+component_to_textract_output_result = FragmentToTextractDocumentAnalysisOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, use_form_feature=True, detailed_error=True, debug=True)
+component_to_textract_output_result.wait_textract_document_analysis_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
+textract_output_to_text_and_json_result = TextractDocumentAnalysisOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, debug=True)
 
 # --- method 1
 # tracker.landing_to_raw(bsm=bsm, workspace=ws, debug=True)

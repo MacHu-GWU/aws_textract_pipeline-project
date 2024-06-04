@@ -23,6 +23,9 @@ from ..workspace import Workspace
 # current module
 from .status import StatusEnum
 
+if T.TYPE_CHECKING:  # pragma: no cover
+    from mypy_boto3_textract.client import TextractClient
+
 
 st = pm.patterns.status_tracker
 
@@ -59,9 +62,16 @@ class FragmentToTextractOutputResult(DataClass):
     job_id: T.Optional[str] = dataclasses.field()
     job_id_list: T.Optional[T.List[str]] = dataclasses.field()
 
-    def wait_document_analysis_job_to_succeed(
+    # def wait_document_analysis_job_to_succeed(
+    def wait_textract_job_to_succeed(
         self,
-        bsm: "BotoSesManager",
+        textract_client: "TextractClient",
+        waiter_func: T.Literal[
+            aws_textract.better_boto.wait_document_analysis_job_to_succeed,
+            aws_textract.better_boto.wait_document_text_detection_job_to_succeed,
+            aws_textract.better_boto.wait_expense_analysis_job_to_succeed,
+            aws_textract.better_boto.wait_lending_analysis_job_to_succeed,
+        ],
         delays: int = 5,
         timeout: int = 60,
         verbose: bool = True,
@@ -70,17 +80,19 @@ class FragmentToTextractOutputResult(DataClass):
         Wait all Textract API call to succeed for this document.
         """
         if self.is_single_textract_api_call:
-            aws_textract.better_boto.wait_document_analysis_job_to_succeed(
-                textract_client=bsm.textract_client,
+            waiter_func(
+                textract_client=textract_client,
                 job_id=self.job_id,
                 delays=delays,
                 timeout=timeout,
                 verbose=verbose,
             )
+            if verbose:
+                print("")
         else:
             for job_id in self.job_id_list:
-                aws_textract.better_boto.wait_document_analysis_job_to_succeed(
-                    textract_client=bsm.textract_client,
+                waiter_func(
+                    textract_client=textract_client,
                     job_id=job_id,
                     delays=delays,
                     timeout=timeout,
@@ -88,6 +100,96 @@ class FragmentToTextractOutputResult(DataClass):
                 )
                 if verbose:
                     print("")
+
+
+@dataclasses.dataclass
+class FragmentToTextractTextDetectionOutputResult(FragmentToTextractOutputResult):
+    def wait_textract_text_detection_job_to_succeed(
+        self,
+        textract_client: "TextractClient",
+        delays: int = 5,
+        timeout: int = 60,
+        verbose: bool = True,
+    ):  # pragma: no cover
+        return self.wait_textract_job_to_succeed(
+            textract_client=textract_client,
+            waiter_func=aws_textract.better_boto.wait_document_text_detection_job_to_succeed,
+            delays=delays,
+            timeout=timeout,
+            verbose=verbose,
+        )
+
+
+@dataclasses.dataclass
+class FragmentToTextractDocumentAnalysisOutputResult(FragmentToTextractOutputResult):
+    def wait_textract_document_analysis_job_to_succeed(
+        self,
+        textract_client: "TextractClient",
+        delays: int = 5,
+        timeout: int = 60,
+        verbose: bool = True,
+    ):  # pragma: no cover
+        return self.wait_textract_job_to_succeed(
+            textract_client=textract_client,
+            waiter_func=aws_textract.better_boto.wait_document_analysis_job_to_succeed,
+            delays=delays,
+            timeout=timeout,
+            verbose=verbose,
+        )
+
+
+@dataclasses.dataclass
+class FragmentToTextractExpenseAnalysisOutputResult(FragmentToTextractOutputResult):
+    def wait_textract_expense_analysis_job_to_succeed(
+        self,
+        textract_client: "TextractClient",
+        delays: int = 5,
+        timeout: int = 60,
+        verbose: bool = True,
+    ):  # pragma: no cover
+        return self.wait_textract_job_to_succeed(
+            textract_client=textract_client,
+            waiter_func=aws_textract.better_boto.wait_expense_analysis_job_to_succeed,
+            delays=delays,
+            timeout=timeout,
+            verbose=verbose,
+        )
+
+
+@dataclasses.dataclass
+class FragmentToTextractExpenseAnalysisOutputResult(FragmentToTextractOutputResult):
+    def wait_textract_expense_analysis_job_to_succeed(
+        self,
+        textract_client: "TextractClient",
+        delays: int = 5,
+        timeout: int = 60,
+        verbose: bool = True,
+    ):  # pragma: no cover
+        return self.wait_textract_job_to_succeed(
+            textract_client=textract_client,
+            waiter_func=aws_textract.better_boto.wait_expense_analysis_job_to_succeed,
+            delays=delays,
+            timeout=timeout,
+            verbose=verbose,
+        )
+
+
+@dataclasses.dataclass
+class FragmentToTextractLendingAnalysisOutputResult(FragmentToTextractOutputResult):
+    def wait_textract_lending_analysis_job_to_succeed(
+        self,
+        textract_client: "TextractClient",
+        delays: int = 5,
+        timeout: int = 60,
+        verbose: bool = True,
+    ):  # pragma: no cover
+        return self.wait_textract_job_to_succeed(
+            textract_client=textract_client,
+            waiter_func=aws_textract.better_boto.wait_lending_analysis_job_to_succeed,
+            delays=delays,
+            timeout=timeout,
+            verbose=verbose,
+        )
 
 
 @dataclasses.dataclass
@@ -115,7 +217,10 @@ class Data(DataClass):
     doc_type: str = dataclasses.field()
     features: T.List[str] = dataclasses.field(default_factory=list)
     fragments: T.List[Fragment] = Fragment.list_of_nested_field(default_factory=list)
-    fragment_to_textract_output_result: T.Optional[FragmentToTextractOutputResult] = FragmentToTextractOutputResult.nested_field(default=None)
+    fragment_to_textract_text_detection_output_result: T.Optional[FragmentToTextractTextDetectionOutputResult] = FragmentToTextractTextDetectionOutputResult.nested_field(default=None)
+    fragment_to_textract_document_analysis_output_result: T.Optional[FragmentToTextractDocumentAnalysisOutputResult] = FragmentToTextractDocumentAnalysisOutputResult.nested_field(default=None)
+    fragment_to_textract_expense_analysis_output_result: T.Optional[FragmentToTextractExpenseAnalysisOutputResult] = FragmentToTextractLendingAnalysisOutputResult.nested_field(default=None)
+    fragment_to_textract_lending_analysis_output_result: T.Optional[FragmentToTextractLendingAnalysisOutputResult] = FragmentToTextractExpenseAnalysisOutputResult.nested_field(default=None)
     # fmt: on
 
     @property
