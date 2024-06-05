@@ -116,5 +116,12 @@ class RawToFragmentTask(BaseTask):
                 data_obj.fragments = fragment_list
                 exec_ctx.set_data(data_obj.to_dict())
                 return fragment_list
+            elif task.data_obj.doc_type in [
+                types.DocTypeEnum.jpg.value,
+                types.DocTypeEnum.png.value,
+                types.DocTypeEnum.bmp.value,
+                types.DocTypeEnum.tiff.value,
+            ]:
+                return fragment_list
             else:
                 raise NotImplementedError

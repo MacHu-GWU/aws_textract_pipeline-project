@@ -17,13 +17,13 @@ from .status import StatusEnum
 from .orm import make_tracker_config, BaseTask, TextractOutputToTextAndJsonResult
 
 
-class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
+class TextractExpenseAnalysisOutputToTextAndJsonTask(BaseTask):
     config = make_tracker_config(
-        pending_status=StatusEnum.s0400_textract_text_detection_output_to_text_and_json_pending.value,
-        in_progress_status=StatusEnum.s0420_textract_text_detection_output_to_text_and_json_in_progress.value,
-        failed_status=StatusEnum.s0440_textract_text_detection_output_to_text_and_json_failed.value,
-        succeeded_status=StatusEnum.s0460_textract_text_detection_output_to_text_and_json_succeeded.value,
-        ignored_status=StatusEnum.s0480_textract_text_detection_output_to_text_and_json_ignored.value,
+        pending_status=StatusEnum.s0800_textract_expense_analysis_output_to_text_and_json_pending.value,
+        in_progress_status=StatusEnum.s0820_textract_expense_analysis_output_to_text_and_json_in_progress.value,
+        failed_status=StatusEnum.s0840_textract_expense_analysis_output_to_text_and_json_failed.value,
+        succeeded_status=StatusEnum.s0860_textract_expense_analysis_output_to_text_and_json_succeeded.value,
+        ignored_status=StatusEnum.s0880_textract_expense_analysis_output_to_text_and_json_ignored.value,
     )
 
     def _run(
@@ -40,7 +40,7 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
         base_metadata[MetadataKeyEnum.frag_id.value] = frag_id
 
         # Get merged data
-        res = aws_textract.better_boto.get_document_text_detection(
+        res = aws_textract.better_boto.get_expense_analysis(
             textract_client=bsm.textract_client,
             job_id=job_id,
             all_pages=True,
@@ -50,7 +50,7 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
 
         # Text
         text = aws_textract.res.blocks_to_text(res.get("Blocks", []))
-        s3path_text = workspace.get_textract_text_detection_text_s3path(
+        s3path_text = workspace.get_textract_expense_analysis_text_s3path(
             doc_id=self.doc_id,
             frag_id=frag_id,
         )
@@ -65,7 +65,7 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
         )
 
         # Json
-        s3path_json = workspace.get_textract_text_detection_json_s3path(
+        s3path_json = workspace.get_textract_expense_analysis_json_s3path(
             doc_id=self.doc_id,
             frag_id=frag_id,
         )
@@ -90,7 +90,7 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
         debug: bool = False,
     ):
         """
-        Convert textract text detection output to human / machine friendly
+        Convert textract expense analysis output to human / machine friendly
         text and json.
 
         :param doc_id: document id.
@@ -103,16 +103,16 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
         with cls.start(
             task_id=doc_id,
             allowed_status=[
-                StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
+                StatusEnum.s0760_fragment_to_textract_expense_analysis_output_succeeded.value,
             ],
             detailed_error=detailed_error,
             debug=debug,
         ) as exec_ctx:
-            task: "TextractTextDetectionOutputToTextAndJsonTask" = exec_ctx.task
+            task: "TextractExpenseAnalysisOutputToTextAndJsonTask" = exec_ctx.task
 
             data_obj = task.data_obj
-            fragment_to_textract_text_detection_output_result = (
-                data_obj.fragment_to_textract_text_detection_output_result
+            fragment_to_textract_expense_analysis_output_result = (
+                data_obj.fragment_to_textract_expense_analysis_output_result
             )
             s3path_raw = workspace.get_raw_s3path(doc_id=task.doc_id)
             metadata = s3path_raw.metadata.copy()
@@ -120,10 +120,10 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
                 TextractOutputToTextAndJsonResult()
             )
             if (
-                fragment_to_textract_text_detection_output_result.is_single_textract_api_call
+                fragment_to_textract_expense_analysis_output_result.is_single_textract_api_call
             ):
                 frag_id = ROOT_FRAG_ID
-                job_id = fragment_to_textract_text_detection_output_result.job_id
+                job_id = fragment_to_textract_expense_analysis_output_result.job_id
                 text, res = task._run(
                     bsm=bsm,
                     workspace=workspace,
@@ -136,7 +136,7 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
             else:
                 for fragment, job_id in zip(
                     data_obj.fragments,
-                    fragment_to_textract_text_detection_output_result.job_id_list,
+                    fragment_to_textract_expense_analysis_output_result.job_id_list,
                 ):
                     frag_id = fragment.id
                     text, res = task._run(

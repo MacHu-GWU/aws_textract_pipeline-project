@@ -3,7 +3,6 @@
 import typing as T
 import json
 
-from pathlib_mate import Path
 import pynamodb_mate.api as pm
 from boto_session_manager import BotoSesManager
 import aws_textract.api as aws_textract

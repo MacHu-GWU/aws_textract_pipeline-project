@@ -64,7 +64,7 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
                 SNSTopicArn=sns_topic_arn,
                 RoleArn=role_arn,
             )
-        logger.info(f"analyze {feature_types} for: {s3path_fragment.uri}")
+        logger.info(f"run document analysis with {feature_types} features for: {s3path_fragment.uri}")
         res = bsm.textract_client.start_document_analysis(**kwargs)
         job_id = res["JobId"]
         logger.info(f"JobId: {job_id}")

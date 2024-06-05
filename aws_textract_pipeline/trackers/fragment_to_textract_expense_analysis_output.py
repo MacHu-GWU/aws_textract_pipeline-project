@@ -14,19 +14,19 @@ from ..constants import ROOT_FRAG_ID
 
 from .status import StatusEnum
 from .orm import (
-    FragmentToTextractTextDetectionOutputResult,
+    FragmentToTextractExpenseAnalysisOutputResult,
     make_tracker_config,
     BaseTask,
 )
 
 
-class FragmentToTextractTextDetectionOutputTask(BaseTask):
+class FragmentToTextractExpenseAnalysisOutputTask(BaseTask):
     config = make_tracker_config(
-        pending_status=StatusEnum.s0300_fragment_to_textract_text_detection_output_pending.value,
-        in_progress_status=StatusEnum.s0320_fragment_to_textract_text_detection_output_in_progress.value,
-        failed_status=StatusEnum.s0340_fragment_to_textract_text_detection_output_failed.value,
-        succeeded_status=StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
-        ignored_status=StatusEnum.s0380_fragment_to_textract_text_detection_output_ignored.value,
+        pending_status=StatusEnum.s0700_fragment_to_textract_expense_analysis_output_pending.value,
+        in_progress_status=StatusEnum.s0720_fragment_to_textract_expense_analysis_output_in_progress.value,
+        failed_status=StatusEnum.s0740_fragment_to_textract_expense_analysis_output_failed.value,
+        succeeded_status=StatusEnum.s0760_fragment_to_textract_expense_analysis_output_succeeded.value,
+        ignored_status=StatusEnum.s0780_fragment_to_textract_expense_analysis_output_ignored.value,
     )
 
     def _run(
@@ -39,7 +39,7 @@ class FragmentToTextractTextDetectionOutputTask(BaseTask):
         sns_topic_arn: T.Optional[str] = None,
         role_arn: T.Optional[str] = None,
     ):  # pragma: no cover
-        s3dir_textract_output = workspace.get_textract_text_detection_output_s3dir(
+        s3dir_textract_output = workspace.get_textract_expense_analysis_output_s3dir(
             doc_id=doc_id,
             frag_id=frag_id,
         )
@@ -62,8 +62,8 @@ class FragmentToTextractTextDetectionOutputTask(BaseTask):
                 SNSTopicArn=sns_topic_arn,
                 RoleArn=role_arn,
             )
-        logger.info(f"run text detection for: {s3path_fragment.uri}")
-        res = bsm.textract_client.start_document_text_detection(**kwargs)
+        logger.info(f"run expense analysis for: {s3path_fragment.uri}")
+        res = bsm.textract_client.start_expense_analysis(**kwargs)
         job_id = res["JobId"]
         logger.info(f"JobId: {job_id}")
         return job_id
@@ -79,9 +79,9 @@ class FragmentToTextractTextDetectionOutputTask(BaseTask):
         role_arn: T.Optional[str] = None,
         detailed_error: bool = False,
         debug: bool = False,
-    ) -> FragmentToTextractTextDetectionOutputResult:
+    ) -> FragmentToTextractExpenseAnalysisOutputResult:
         """
-        Use textract start text detection API to extract text from the document.
+        Use textract start expense analysis API to analyze the document.
 
         :param doc_id: document id.
         :param bsm: ``boto_session_manager.BotoSesManager`` object.
@@ -105,18 +105,18 @@ class FragmentToTextractTextDetectionOutputTask(BaseTask):
                 StatusEnum.s0260_raw_to_fragment_succeeded.value,
                 # other situation
                 # StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
-                # StatusEnum.s0460_textract_text_detection_output_to_text_and_json_succeeded.value,
+                StatusEnum.s0460_textract_text_detection_output_to_text_and_json_succeeded.value,
                 # StatusEnum.s0560_fragment_to_textract_document_analysis_output_succeeded.value,
                 StatusEnum.s0660_textract_document_analysis_output_to_text_and_json_succeeded.value,
                 # StatusEnum.s0760_fragment_to_textract_expense_analysis_output_succeeded.value,
-                StatusEnum.s0860_textract_expense_analysis_output_to_text_and_json_succeeded.value,
+                # StatusEnum.s0860_textract_expense_analysis_output_to_text_and_json_succeeded.value,
                 # StatusEnum.s0960_fragment_to_textract_lending_analysis_output_succeeded.value,
                 StatusEnum.s1060_textract_lending_analysis_output_to_text_and_json_succeeded.value,
             ],
             detailed_error=detailed_error,
             debug=debug,
         ) as exec_ctx:
-            task: "FragmentToTextractTextDetectionOutputTask" = exec_ctx.task
+            task: "FragmentToTextractExpenseAnalysisOutputTask" = exec_ctx.task
             data_obj = task.data_obj
             s3path_raw = workspace.get_raw_s3path(doc_id=doc_id)
             # ------------------------------------------------------------------
@@ -132,55 +132,60 @@ class FragmentToTextractTextDetectionOutputTask(BaseTask):
                         is_single_textract_api_call = False
                 else:
                     is_single_textract_api_call = single_api_call
+            elif data_obj.doc_type in [
+                types.DocTypeEnum.jpg.value,
+                types.DocTypeEnum.png.value,
+            ]:
+                is_single_textract_api_call = True
+            else:
+                raise NotImplementedError
 
-                if is_single_textract_api_call:
-                    frag_id = ROOT_FRAG_ID
+            if is_single_textract_api_call:
+                frag_id = ROOT_FRAG_ID
+                job_id = task._run(
+                    bsm=bsm,
+                    workspace=workspace,
+                    s3path_fragment=s3path_raw,
+                    doc_id=doc_id,
+                    frag_id=frag_id,
+                    sns_topic_arn=sns_topic_arn,
+                    role_arn=role_arn,
+                )
+                fragment_to_textract_expense_analysis_output_result = (
+                    FragmentToTextractExpenseAnalysisOutputResult(
+                        is_single_textract_api_call=True,
+                        job_id=job_id,
+                        job_id_list=None,
+                    )
+                )
+            # if doesn't fit, then make multiple API calls for each fragment.
+            else:
+                fragment_to_textract_expense_analysis_output_result = (
+                    FragmentToTextractExpenseAnalysisOutputResult(
+                        is_single_textract_api_call=False,
+                        job_id=None,
+                        job_id_list=[],
+                    )
+                )
+                for fragment in data_obj.fragments:
+                    frag_id = fragment.id
                     job_id = task._run(
                         bsm=bsm,
                         workspace=workspace,
-                        s3path_fragment=s3path_raw,
+                        s3path_fragment=workspace.get_fragment_s3path(
+                            doc_id=doc_id,
+                            frag_id=frag_id,
+                        ),
                         doc_id=doc_id,
                         frag_id=frag_id,
                         sns_topic_arn=sns_topic_arn,
                         role_arn=role_arn,
                     )
-                    fragment_to_textract_text_detection_output_result = (
-                        FragmentToTextractTextDetectionOutputResult(
-                            is_single_textract_api_call=True,
-                            job_id=job_id,
-                            job_id_list=None,
-                        )
+                    fragment_to_textract_expense_analysis_output_result.job_id_list.append(
+                        job_id
                     )
-                # if doesn't fit, then make multiple API calls for each fragment.
-                else:
-                    fragment_to_textract_text_detection_output_result = (
-                        FragmentToTextractTextDetectionOutputResult(
-                            is_single_textract_api_call=False,
-                            job_id=None,
-                            job_id_list=[],
-                        )
-                    )
-                    for fragment in data_obj.fragments:
-                        frag_id = fragment.id
-                        job_id = task._run(
-                            bsm=bsm,
-                            workspace=workspace,
-                            s3path_fragment=workspace.get_fragment_s3path(
-                                doc_id=doc_id,
-                                frag_id=frag_id,
-                            ),
-                            doc_id=doc_id,
-                            frag_id=frag_id,
-                            sns_topic_arn=sns_topic_arn,
-                            role_arn=role_arn,
-                        )
-                        fragment_to_textract_text_detection_output_result.job_id_list.append(
-                            job_id
-                        )
-                data_obj.fragment_to_textract_text_detection_output_result = (
-                    fragment_to_textract_text_detection_output_result
-                )
-                exec_ctx.set_data(data_obj.to_dict())
-                return fragment_to_textract_text_detection_output_result
-            else:
-                raise NotImplementedError
+            data_obj.fragment_to_textract_expense_analysis_output_result = (
+                fragment_to_textract_expense_analysis_output_result
+            )
+            exec_ctx.set_data(data_obj.to_dict())
+            return fragment_to_textract_expense_analysis_output_result

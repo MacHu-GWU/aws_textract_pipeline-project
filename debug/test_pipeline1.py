@@ -23,7 +23,15 @@ print(f"s3dir_root: {s3dir_root.console_url}")
 
 # Setup the sample document
 dir_here = Path.dir_here(__file__)
-path_doc = dir_here / "f1040.pdf"
+
+# path_doc = dir_here / "f1040.pdf"
+# doc_type = aws_textract_pipeline.types.DocTypeEnum.pdf.value
+
+# path_doc = dir_here / "fw2.pdf"
+# doc_type = aws_textract_pipeline.types.DocTypeEnum.pdf.value
+
+path_doc = dir_here / "receipt.png"
+doc_type = aws_textract_pipeline.types.DocTypeEnum.png.value
 
 # Setup important context for aws_textract_pipeline
 ws = aws_textract_pipeline.Workspace(s3dir_uri=s3dir_root.uri)
@@ -52,24 +60,46 @@ class RawToFragmentTask(aws_textract_pipeline.trackers.RawToFragmentTask):
     status_and_update_time_index = StatusAndUpdateTimeIndex()
 
 
-class FragmentToTextractTextDetectionOutputTask(aws_textract_pipeline.trackers.FragmentToTextractTextDetectionOutputTask):
+class FragmentToTextractTextDetectionOutputTask(
+    aws_textract_pipeline.trackers.FragmentToTextractTextDetectionOutputTask
+):
     Meta = DynamoDBTableMeta
     status_and_update_time_index = StatusAndUpdateTimeIndex()
 
 
-class TextractTextDetectionOutputToTextAndJsonTask(aws_textract_pipeline.trackers.TextractTextDetectionOutputToTextAndJsonTask):
+class TextractTextDetectionOutputToTextAndJsonTask(
+    aws_textract_pipeline.trackers.TextractTextDetectionOutputToTextAndJsonTask
+):
     Meta = DynamoDBTableMeta
     status_and_update_time_index = StatusAndUpdateTimeIndex()
 
-class FragmentToTextractDocumentAnalysisOutputTask(aws_textract_pipeline.trackers.FragmentToTextractDocumentAnalysisOutputTask):
+
+class FragmentToTextractDocumentAnalysisOutputTask(
+    aws_textract_pipeline.trackers.FragmentToTextractDocumentAnalysisOutputTask
+):
     Meta = DynamoDBTableMeta
     status_and_update_time_index = StatusAndUpdateTimeIndex()
 
 
-class TextractDocumentAnalysisOutputToTextAndJsonTask(aws_textract_pipeline.trackers.TextractDocumentAnalysisOutputToTextAndJsonTask):
+class TextractDocumentAnalysisOutputToTextAndJsonTask(
+    aws_textract_pipeline.trackers.TextractDocumentAnalysisOutputToTextAndJsonTask
+):
     Meta = DynamoDBTableMeta
     status_and_update_time_index = StatusAndUpdateTimeIndex()
 
+
+class FragmentToTextractExpenseAnalysisOutputTask(
+    aws_textract_pipeline.trackers.FragmentToTextractExpenseAnalysisOutputTask
+):
+    Meta = DynamoDBTableMeta
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
+
+
+class TextractExpenseAnalysisOutputToTextAndJsonTask(
+    aws_textract_pipeline.trackers.TextractExpenseAnalysisOutputToTextAndJsonTask
+):
+    Meta = DynamoDBTableMeta
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
 
 
 # Create the DynamoDB table
@@ -85,7 +115,7 @@ LandingToRawTask.delete_all()
 # Start the ETL pipeline
 landing_doc = aws_textract_pipeline.LandingDocument(
     s3uri=ws.s3dir_landing.joinpath(path_doc.basename).uri,
-    doc_type=aws_textract_pipeline.types.DocTypeEnum.pdf.value,
+    doc_type=doc_type,
     features=["FORMS"],
 )
 landing_doc.dump(bsm=bsm, body=path_doc.read_bytes())
@@ -102,13 +132,17 @@ doc_id = landing_to_raw_task.doc_id
 LandingToRawTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
 RawToFragmentTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, clear_tmp_dir=True, detailed_error=True, debug=True)
 
-fragment_to_textract_text_detection_output_result = FragmentToTextractTextDetectionOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
-fragment_to_textract_text_detection_output_result.wait_textract_text_detection_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
-textract_text_detection_output_to_text_and_json_result = TextractTextDetectionOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
+# fragment_to_textract_text_detection_output_result = FragmentToTextractTextDetectionOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, single_api_call=None, detailed_error=True, debug=True)
+# fragment_to_textract_text_detection_output_result.wait_textract_text_detection_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
+# textract_text_detection_output_to_text_and_json_result = TextractTextDetectionOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
 
-fragment_to_textract_document_analysis_output_result = FragmentToTextractDocumentAnalysisOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, use_form_feature=True, detailed_error=True, debug=True)
-fragment_to_textract_document_analysis_output_result.wait_textract_document_analysis_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
-textract_document_analysis_output_to_text_and_json_result = TextractDocumentAnalysisOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
+# fragment_to_textract_document_analysis_output_result = FragmentToTextractDocumentAnalysisOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, use_form_feature=True, single_api_call=None, detailed_error=True, debug=True)
+# fragment_to_textract_document_analysis_output_result.wait_textract_document_analysis_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
+# textract_document_analysis_output_to_text_and_json_result = TextractDocumentAnalysisOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
+
+fragment_to_textract_expense_analysis_output_result = FragmentToTextractExpenseAnalysisOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, single_api_call=None, detailed_error=True, debug=True)
+fragment_to_textract_expense_analysis_output_result.wait_textract_expense_analysis_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
+textract_expense_analysis_output_to_text_and_json_result = TextractExpenseAnalysisOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
 
 # --- method 1
 # tracker.landing_to_raw(bsm=bsm, workspace=ws, debug=True)
