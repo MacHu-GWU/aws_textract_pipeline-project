@@ -14,19 +14,19 @@ from ..constants import ROOT_FRAG_ID
 
 from .status import StatusEnum
 from .orm import (
-    FragmentToTextractDocumentAnalysisOutputResult,
+    FragmentToTextractTextDetectionOutputResult,
     make_tracker_config,
     BaseTask,
 )
 
 
-class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
+class FragmentToTextractTextDetectionOutputTask(BaseTask):
     config = make_tracker_config(
-        pending_status=StatusEnum.s0500_fragment_to_textract_document_analysis_output_pending.value,
-        in_progress_status=StatusEnum.s0520_fragment_to_textract_document_analysis_output_in_progress.value,
-        failed_status=StatusEnum.s0540_fragment_to_textract_document_analysis_output_failed.value,
-        succeeded_status=StatusEnum.s0560_fragment_to_textract_document_analysis_output_succeeded.value,
-        ignored_status=StatusEnum.s0580_fragment_to_textract_document_analysis_output_ignored.value,
+        pending_status=StatusEnum.s0300_fragment_to_textract_text_detection_output_pending.value,
+        in_progress_status=StatusEnum.s0320_fragment_to_textract_text_detection_output_in_progress.value,
+        failed_status=StatusEnum.s0340_fragment_to_textract_text_detection_output_failed.value,
+        succeeded_status=StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
+        ignored_status=StatusEnum.s0380_fragment_to_textract_text_detection_output_ignored.value,
     )
 
     def _run(
@@ -36,11 +36,10 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
         s3path_fragment: S3Path,
         doc_id: str,
         frag_id: str,
-        feature_types: T.List[str],
         sns_topic_arn: T.Optional[str] = None,
         role_arn: T.Optional[str] = None,
     ):  # pragma: no cover
-        s3dir_textract_output = workspace.get_textract_document_analysis_output_s3dir(
+        s3dir_textract_output = workspace.get_textract_text_detection_output_s3dir(
             doc_id=doc_id,
             frag_id=frag_id,
         )
@@ -55,7 +54,6 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
         )
         kwargs = dict(
             DocumentLocation=document_location,
-            FeatureTypes=feature_types,
             OutputConfig=output_config,
             JobTag=doc_id,
         )
@@ -64,8 +62,8 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
                 SNSTopicArn=sns_topic_arn,
                 RoleArn=role_arn,
             )
-        logger.info(f"analyze {feature_types} for: {s3path_fragment.uri}")
-        res = bsm.textract_client.start_document_analysis(**kwargs)
+        logger.info(f"detect text for: {s3path_fragment.uri}")
+        res = bsm.textract_client.start_document_text_detection(**kwargs)
         job_id = res["JobId"]
         logger.info(f"JobId: {job_id}")
         return job_id
@@ -77,18 +75,13 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
         bsm: "BotoSesManager",
         workspace: "Workspace",
         single_api_call: T.Optional[bool] = None,
-        use_table_feature: bool = False,
-        use_form_feature: bool = False,
-        use_query_feature: bool = False,
-        use_signature_feature: bool = False,
-        use_layout_feature: bool = False,
         sns_topic_arn: T.Optional[str] = None,
         role_arn: T.Optional[str] = None,
         detailed_error: bool = False,
         debug: bool = False,
-    ) -> FragmentToTextractDocumentAnalysisOutputResult:
+    ) -> FragmentToTextractTextDetectionOutputResult:
         """
-        Use textract start document analysis API to analyze the document.
+        Use textract start text detection API to extract text from the document.
 
         :param doc_id: document id.
         :param bsm: ``boto_session_manager.BotoSesManager`` object.
@@ -98,11 +91,6 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
             document size and number of fragments. If True, only one API call
             will be made for the whole document. If False, multiple API calls
             will be made for each fragment.
-        :param use_table_feature: at least one feature must be enabled.
-        :param use_form_feature: at least one feature must be enabled.
-        :param use_query_feature: at least one feature must be enabled.
-        :param use_signature_feature: at least one feature must be enabled.
-        :param use_layout_feature: at least one feature must be enabled.
         :param sns_topic_arn: AWS SNS topic arn if you want to send a notification
             when the job is done.
         :param role_arn: the role arn that allows Amazon Textract to publish to the
@@ -110,21 +98,6 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
         :param detailed_error:
         :param debug:
         """
-        # prepare textract API arguments
-        # for feature types, if user manually specified the feature types
-        # in this method, then use it. Otherwise, use the feature types
-        # from the landing document S3 object metadata
-        feature_types = list()
-        for flag, feature in [
-            (use_table_feature, "TABLES"),
-            (use_form_feature, "FORMS"),
-            (use_query_feature, "QUERIES"),
-            (use_signature_feature, "SIGNATURES"),
-            (use_layout_feature, "LAYOUT"),
-        ]:
-            if flag:
-                feature_types.append(feature)
-
         exec_ctx: pm.patterns.status_tracker.ExecutionContext
         with cls.start(
             task_id=doc_id,
@@ -132,9 +105,9 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
                 StatusEnum.s0260_raw_to_fragment_succeeded.value,
                 # other situation
                 # StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
-                StatusEnum.s0460_textract_text_detection_output_to_text_and_json_succeeded.value,
+                # StatusEnum.s0460_textract_text_detection_output_to_text_and_json_succeeded.value,
                 # StatusEnum.s0560_fragment_to_textract_document_analysis_output_succeeded.value,
-                # StatusEnum.s0660_textract_document_analysis_output_to_text_and_json_succeeded.value,
+                StatusEnum.s0660_textract_document_analysis_output_to_text_and_json_succeeded.value,
                 # StatusEnum.s0760_fragment_to_textract_expense_analysis_output_succeeded.value,
                 StatusEnum.s0860_textract_expense_analysis_output_to_text_and_json_succeeded.value,
                 # StatusEnum.s0960_fragment_to_textract_lending_analysis_output_succeeded.value,
@@ -143,16 +116,8 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
             detailed_error=detailed_error,
             debug=debug,
         ) as exec_ctx:
-            task: "FragmentToTextractDocumentAnalysisOutputTask" = exec_ctx.task
+            task: "FragmentToTextractTextDetectionOutputTask" = exec_ctx.task
             data_obj = task.data_obj
-            if len(feature_types) == 0:
-                if data_obj.features:
-                    feature_types = data_obj.features
-                else:
-                    raise ValueError(
-                        "Cannot find textract features specification in S3 object metadata!"
-                    )
-
             s3path_raw = workspace.get_raw_s3path(doc_id=doc_id)
             # ------------------------------------------------------------------
             # PDF
@@ -176,12 +141,11 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
                         s3path_fragment=s3path_raw,
                         doc_id=doc_id,
                         frag_id=frag_id,
-                        feature_types=feature_types,
                         sns_topic_arn=sns_topic_arn,
                         role_arn=role_arn,
                     )
-                    fragment_to_textract_document_analysis_output_result = (
-                        FragmentToTextractDocumentAnalysisOutputResult(
+                    fragment_to_textract_text_detection_output_result = (
+                        FragmentToTextractTextDetectionOutputResult(
                             is_single_textract_api_call=True,
                             job_id=job_id,
                             job_id_list=None,
@@ -189,8 +153,8 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
                     )
                 # if doesn't fit, then make multiple API calls for each fragment.
                 else:
-                    fragment_to_textract_document_analysis_output_result = (
-                        FragmentToTextractDocumentAnalysisOutputResult(
+                    fragment_to_textract_text_detection_output_result = (
+                        FragmentToTextractTextDetectionOutputResult(
                             is_single_textract_api_call=False,
                             job_id=None,
                             job_id_list=[],
@@ -207,17 +171,16 @@ class FragmentToTextractDocumentAnalysisOutputTask(BaseTask):
                             ),
                             doc_id=doc_id,
                             frag_id=frag_id,
-                            feature_types=feature_types,
                             sns_topic_arn=sns_topic_arn,
                             role_arn=role_arn,
                         )
-                        fragment_to_textract_document_analysis_output_result.job_id_list.append(
+                        fragment_to_textract_text_detection_output_result.job_id_list.append(
                             job_id
                         )
-                data_obj.fragment_to_textract_document_analysis_output_result = (
-                    fragment_to_textract_document_analysis_output_result
+                data_obj.fragment_to_textract_text_detection_output_result = (
+                    fragment_to_textract_text_detection_output_result
                 )
                 exec_ctx.set_data(data_obj.to_dict())
-                return fragment_to_textract_document_analysis_output_result
+                return fragment_to_textract_text_detection_output_result
             else:
                 raise NotImplementedError

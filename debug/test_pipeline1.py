@@ -5,9 +5,14 @@ from pathlib_mate import Path
 from s3pathlib import S3Path, context
 from boto_session_manager import BotoSesManager
 import pynamodb_mate.api as pm
+
 from rich import print as rprint
+from rich.console import Console
+from rich.panel import Panel
 
 import aws_textract_pipeline.api as aws_textract_pipeline
+
+console = Console()
 
 # Setup your AWS environment
 bsm = BotoSesManager(profile_name="bmt_app_dev_us_east_1")
@@ -46,6 +51,15 @@ class RawToFragmentTask(aws_textract_pipeline.trackers.RawToFragmentTask):
     Meta = DynamoDBTableMeta
     status_and_update_time_index = StatusAndUpdateTimeIndex()
 
+
+class FragmentToTextractTextDetectionOutputTask(aws_textract_pipeline.trackers.FragmentToTextractTextDetectionOutputTask):
+    Meta = DynamoDBTableMeta
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
+
+
+class TextractTextDetectionOutputToTextAndJsonTask(aws_textract_pipeline.trackers.TextractTextDetectionOutputToTextAndJsonTask):
+    Meta = DynamoDBTableMeta
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
 
 class FragmentToTextractDocumentAnalysisOutputTask(aws_textract_pipeline.trackers.FragmentToTextractDocumentAnalysisOutputTask):
     Meta = DynamoDBTableMeta
@@ -87,9 +101,14 @@ doc_id = landing_to_raw_task.doc_id
 # --- method 1
 LandingToRawTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
 RawToFragmentTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, clear_tmp_dir=True, detailed_error=True, debug=True)
-component_to_textract_output_result = FragmentToTextractDocumentAnalysisOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, use_form_feature=True, detailed_error=True, debug=True)
-component_to_textract_output_result.wait_textract_document_analysis_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
-textract_output_to_text_and_json_result = TextractDocumentAnalysisOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, debug=True)
+
+fragment_to_textract_text_detection_output_result = FragmentToTextractTextDetectionOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
+fragment_to_textract_text_detection_output_result.wait_textract_text_detection_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
+textract_text_detection_output_to_text_and_json_result = TextractTextDetectionOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
+
+fragment_to_textract_document_analysis_output_result = FragmentToTextractDocumentAnalysisOutputTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, use_form_feature=True, detailed_error=True, debug=True)
+fragment_to_textract_document_analysis_output_result.wait_textract_document_analysis_job_to_succeed(textract_client=bsm.textract_client, timeout=300, verbose=True)
+textract_document_analysis_output_to_text_and_json_result = TextractDocumentAnalysisOutputToTextAndJsonTask.run(doc_id=doc_id, bsm=bsm, workspace=ws, detailed_error=True, debug=True)
 
 # --- method 1
 # tracker.landing_to_raw(bsm=bsm, workspace=ws, debug=True)
