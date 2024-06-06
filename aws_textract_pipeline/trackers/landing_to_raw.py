@@ -19,6 +19,7 @@ class LandingToRawTask(BaseTask):
         failed_status=StatusEnum.s0140_landing_to_raw_failed.value,
         succeeded_status=StatusEnum.s0160_landing_to_raw_succeeded.value,
         ignored_status=StatusEnum.s0180_landing_to_raw_ignored.value,
+        more_pending_status=[],
     )
 
     @classmethod

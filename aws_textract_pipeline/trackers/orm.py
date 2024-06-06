@@ -306,6 +306,7 @@ def make_tracker_config(
     failed_status: int,
     succeeded_status: int,
     ignored_status: int,
+    more_pending_status: T.List[int],
 ) -> st.TrackerConfig:
     return st.TrackerConfig.make(
         use_case_id=USE_CASE_ID,
@@ -319,6 +320,7 @@ def make_tracker_config(
         n_failed_shard=5,
         n_succeeded_shard=10,
         n_ignored_shard=5,
+        more_pending_status=more_pending_status,
         status_zero_pad=6,
         status_shard_zero_pad=4,
         max_retry=3,

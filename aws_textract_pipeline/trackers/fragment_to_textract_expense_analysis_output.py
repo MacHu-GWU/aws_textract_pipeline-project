@@ -27,6 +27,18 @@ class FragmentToTextractExpenseAnalysisOutputTask(BaseTask):
         failed_status=StatusEnum.s0740_fragment_to_textract_expense_analysis_output_failed.value,
         succeeded_status=StatusEnum.s0760_fragment_to_textract_expense_analysis_output_succeeded.value,
         ignored_status=StatusEnum.s0780_fragment_to_textract_expense_analysis_output_ignored.value,
+        more_pending_status=[
+            StatusEnum.s0260_raw_to_fragment_succeeded.value,
+            # other situation
+            # StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
+            StatusEnum.s0460_textract_text_detection_output_to_text_and_json_succeeded.value,
+            # StatusEnum.s0560_fragment_to_textract_document_analysis_output_succeeded.value,
+            StatusEnum.s0660_textract_document_analysis_output_to_text_and_json_succeeded.value,
+            # StatusEnum.s0760_fragment_to_textract_expense_analysis_output_succeeded.value,
+            # StatusEnum.s0860_textract_expense_analysis_output_to_text_and_json_succeeded.value,
+            # StatusEnum.s0960_fragment_to_textract_lending_analysis_output_succeeded.value,
+            StatusEnum.s1060_textract_lending_analysis_output_to_text_and_json_succeeded.value,
+        ],
     )
 
     def _run(
@@ -101,18 +113,6 @@ class FragmentToTextractExpenseAnalysisOutputTask(BaseTask):
         exec_ctx: pm.patterns.status_tracker.ExecutionContext
         with cls.start(
             task_id=doc_id,
-            allowed_status=[
-                StatusEnum.s0260_raw_to_fragment_succeeded.value,
-                # other situation
-                # StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
-                StatusEnum.s0460_textract_text_detection_output_to_text_and_json_succeeded.value,
-                # StatusEnum.s0560_fragment_to_textract_document_analysis_output_succeeded.value,
-                StatusEnum.s0660_textract_document_analysis_output_to_text_and_json_succeeded.value,
-                # StatusEnum.s0760_fragment_to_textract_expense_analysis_output_succeeded.value,
-                # StatusEnum.s0860_textract_expense_analysis_output_to_text_and_json_succeeded.value,
-                # StatusEnum.s0960_fragment_to_textract_lending_analysis_output_succeeded.value,
-                StatusEnum.s1060_textract_lending_analysis_output_to_text_and_json_succeeded.value,
-            ],
             detailed_error=detailed_error,
             debug=debug,
         ) as exec_ctx:

@@ -23,6 +23,9 @@ class RawToFragmentTask(BaseTask):
         failed_status=StatusEnum.s0240_raw_to_fragment_failed.value,
         succeeded_status=StatusEnum.s0260_raw_to_fragment_succeeded.value,
         ignored_status=StatusEnum.s0280_raw_to_fragment_ignored.value,
+        more_pending_status=[
+            StatusEnum.s0160_landing_to_raw_succeeded.value,
+        ],
     )
 
     @classmethod
@@ -52,9 +55,6 @@ class RawToFragmentTask(BaseTask):
         exec_ctx: pm.patterns.status_tracker.ExecutionContext
         with cls.start(
             task_id=doc_id,
-            allowed_status=[
-                StatusEnum.s0160_landing_to_raw_succeeded.value,
-            ],
             detailed_error=detailed_error,
             debug=debug,
         ) as exec_ctx:

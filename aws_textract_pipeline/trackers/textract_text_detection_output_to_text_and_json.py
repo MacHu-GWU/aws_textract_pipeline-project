@@ -24,6 +24,9 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
         failed_status=StatusEnum.s0440_textract_text_detection_output_to_text_and_json_failed.value,
         succeeded_status=StatusEnum.s0460_textract_text_detection_output_to_text_and_json_succeeded.value,
         ignored_status=StatusEnum.s0480_textract_text_detection_output_to_text_and_json_ignored.value,
+        more_pending_status=[
+            StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
+        ],
     )
 
     def _run(
@@ -102,9 +105,6 @@ class TextractTextDetectionOutputToTextAndJsonTask(BaseTask):
         exec_ctx: pm.patterns.status_tracker.ExecutionContext
         with cls.start(
             task_id=doc_id,
-            allowed_status=[
-                StatusEnum.s0360_fragment_to_textract_text_detection_output_succeeded.value,
-            ],
             detailed_error=detailed_error,
             debug=debug,
         ) as exec_ctx:
